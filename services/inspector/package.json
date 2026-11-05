@@ -1,0 +1,29 @@
+{
+  "name": "@openbox/inspector",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.4.0",
+    "@google/genai": "^2.32.0",
+    "@hiero-ledger/sdk": "2.90.1",
+    "@openbox/hedera": "workspace:^",
+    "@openbox/shared": "workspace:^",
+    "@x402/core": "^2.29.0",
+    "@x402/express": "^2.29.0",
+    "@x402/hedera": "^2.29.0",
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "openai": "^7.50.0",
+    "viem": "^2.57.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6"
+  }
+}
