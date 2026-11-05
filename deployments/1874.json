@@ -1,0 +1,14 @@
+{
+  "accountFactory": "0x08C4Fc01A65D36E9d835FD3D306343F5Ab82d4df",
+  "attester": "0xcb25e989F955989e681bA1cC354f4767F4571c00",
+  "chainId": 1874,
+  "deliveryCheckout": "0xF2eeBe4d4B7D54ac85932AbaEE9883Edf8F4f19c",
+  "deployBlock": 12206692,
+  "inspectors": [
+    "0xc4D50fE6d4c93BCF0E7B24383eD7CF0dD0ad393a",
+    "0x191A3e615db85aA436fA1Ec4bf20143C7950b8f5"
+  ],
+  "mockToken": false,
+  "owner": "0x783b2312Ed4dfbaFEa885E9Eb669E03876F3f51E",
+  "token": "0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7"
+}
