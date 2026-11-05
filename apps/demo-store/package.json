@@ -1,0 +1,8 @@
+{
+  "name": "@openbox/demo-store",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A third-party store that adds OpenBox checkout in ~20 lines (public/checkout.js).",
+  "scripts": { "dev": "node server.mjs", "start": "node server.mjs" }
+}

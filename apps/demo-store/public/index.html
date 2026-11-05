@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Northwind Gadgets</title>
+  <style>
+    :root { --ink:#0f172a; --mut:#64748b; --line:#e2e8f0; }
+    * { box-sizing: border-box; }
+    body { margin:0; font:15px/1.5 system-ui, sans-serif; color:var(--ink); background:#f8fafc; }
+    header { display:flex; align-items:center; justify-content:space-between; padding:14px 28px; background:#fff; border-bottom:1px solid var(--line); }
+    header b { font-size:18px; letter-spacing:-.01em; }
+    header span { color:var(--mut); font-size:13px; }
+    main { display:grid; grid-template-columns: 1fr 360px; gap:24px; padding:24px 28px; max-width:1200px; margin:0 auto; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:18px; align-content:start; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px; }
+    .img { height:120px; border-radius:8px; background:linear-gradient(135deg,#e0f2fe,#f1f5f9); display:grid; place-items:center; font-size:42px; margin-bottom:10px; }
+    .price { font-weight:700; font-size:18px; margin:2px 0 10px; }
+    aside { display:flex; flex-direction:column; gap:16px; }
+    pre { margin:0; font:12px/1.5 ui-monospace,Menlo,monospace; background:#0f172a; color:#e2e8f0; padding:14px; border-radius:10px; overflow:auto; }
+    h3 { margin:0 0 8px; font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--mut); }
+    #hooks { font:12px/1.45 ui-monospace,Menlo,monospace; max-height:340px; overflow:auto; }
+    #hooks div { padding:6px 0; border-bottom:1px dashed var(--line); }
+    .ok { color:#047857; } .bad { color:#b91c1c; }
+  </style>
+</head>
+<body>
+  <header><b>Northwind Gadgets</b><span>Ships worldwide · Pay on delivery in USDT</span></header>
+  <main>
+    <section class="grid" id="products"></section>
+    <aside>
+      <div class="card"><h3>Our integration (checkout.js)</h3><pre id="src"></pre></div>
+      <div class="card"><h3>Webhooks received by this store</h3><div id="hooks"><span style="color:var(--mut)">waiting…</span></div></div>
+    </aside>
+  </main>
+  <script>
+    window.OPENBOX_API = "__API__";
+    window.OPENBOX_WEB = "__WEB__";
+    const icons = { "aurora-x1": "📱", pixelbuds: "🎧", "lumen-tab": "💻" };
+    fetch(`${OPENBOX_API}/v1/catalog/pk_demo_openbox`).then((r) => r.json()).then(({ products }) => {
+      document.getElementById("products").innerHTML = products.map((p) => `
+        <div class="card" data-sku="${p.sku}">
+          <div class="img">${icons[p.sku] ?? "📦"}</div>
+          <div>${p.name}</div>
+          <div class="price">${(p.amount / 1e6).toFixed(2)} USDT</div>
+          <div class="checkout"></div>
+        </div>`).join("");
+      const s = document.createElement("script"); s.src = "/checkout.js"; document.body.appendChild(s);
+    });
+    fetch("/checkout.js").then((r) => r.text()).then((t) => (document.getElementById("src").textContent = t));
+    const hooks = document.getElementById("hooks");
+    new EventSource("/hooks/stream").onmessage = (m) => {
+      const h = JSON.parse(m.data);
+      if (hooks.querySelector("span")) hooks.innerHTML = "";
+      const d = document.createElement("div");
+      d.innerHTML = `<span class="${h.valid ? "ok" : "bad"}">${h.valid ? "✓ signed" : "✗ bad sig"}</span> <b>${h.type}</b> ${h.data?.ref ?? ""} ${h.data?.amount ? (h.data.amount / 1e6).toFixed(2) + " USDT" : ""}`;
+      hooks.prepend(d);
+    };
+  </script>
+  <script src="/openbox-checkout.js"></script>
+</body>
+</html>
