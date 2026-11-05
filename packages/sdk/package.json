@@ -1,0 +1,31 @@
+{
+  "name": "openbox-checkout",
+  "version": "0.1.0",
+  "description": "Pay-on-delivery checkout with verified release, settled in USDT on Whitechain. Drop-in widget.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@openbox/shared": "workspace:^",
+    "viem": "^2.57.0"
+  },
+  "devDependencies": {
+    "tsup": "^9.0.0"
+  }
+}
