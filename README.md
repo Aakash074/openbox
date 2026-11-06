@@ -77,6 +77,17 @@ What OpenBox earns:
 
 **100 merchants like this ≈ $300,000 per month in checkout fees alone.** The merchant still saves money, because the fee is lower than the refused-parcel waste.
 
+### Same idea at enterprise scale
+
+The doorbell is just one camera. The same "pay on proof" flow works anywhere goods change hands:
+
+- **Factory receiving dock:** pay the supplier when the pallet's serials and count are checked on arrival.
+- **Warehouse and 3PL:** release payment per inbound shipment, with no paperwork disputes.
+- **Cross-border trade:** a buyer and seller in two countries, no letter of credit, settled in USDT the moment the cargo is verified.
+- **Supplier finance:** the same invoice token lets a supplier get paid the day it ships, not 60 days later.
+
+Example (**assumptions**): one manufacturer receiving 2,000 shipments a month at $25,000 each is **$50M a month**. A 0.1% fee is **$50,000 per month from one customer**, and paying suppliers on verified arrival instead of 60-day terms frees up their working capital.
+
 ---
 
 ## Try it
