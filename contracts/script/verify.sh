@@ -13,3 +13,9 @@ forge verify-contract --chain-id 1874 --verifier "$V" --verifier-url "$URL" ${KE
   "$DC" src/DeliveryCheckout.sol:DeliveryCheckout
 forge verify-contract --chain-id 1874 --verifier "$V" --verifier-url "$URL" ${KEY_ARGS[@]+"${KEY_ARGS[@]}"} --watch \
   "$F" src/OpenBoxAccount.sol:OpenBoxAccountFactory
+NOTE=$(jq -r '.receivableNote // empty' $D)
+if [ -n "$NOTE" ]; then
+  forge verify-contract --chain-id 1874 --verifier "$V" --verifier-url "$URL" ${KEY_ARGS[@]+"${KEY_ARGS[@]}"} --watch \
+    --constructor-args "$(cast abi-encode 'c(address,address,address)' "$TOKEN" "$DC" "$OWNER")" \
+    "$NOTE" src/ReceivableNote.sol:ReceivableNote
+fi

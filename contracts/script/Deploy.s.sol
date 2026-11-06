@@ -5,12 +5,14 @@ import {Script, console2} from "forge-std/Script.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {DeliveryCheckout} from "../src/DeliveryCheckout.sol";
 import {OpenBoxAccountFactory} from "../src/OpenBoxAccount.sol";
+import {ReceivableNote} from "../src/ReceivableNote.sol";
 import {MockUSDT} from "../test/mocks/MockUSDT.sol";
 
 /// Env:
 ///   DEPLOYER_PK      deployer / owner key
 ///   ATTESTER_ADDR    backend key that signs courier attestations
 ///   INSPECTOR_ADDRS  comma-separated inspection service keys that sign verdicts
+///   LENDER_ADDR      optional demo lender allowlisted on ReceivableNote
 ///   USDT_ADDR        token (required on 1874: official USDT 0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7)
 /// On chain 31337 (Anvil) with no USDT_ADDR, a MockUSDT is deployed for local testing only.
 contract Deploy is Script {
@@ -37,6 +39,10 @@ contract Deploy is Script {
         DeliveryCheckout dc = new DeliveryCheckout(IERC20(token), owner, attester);
         for (uint256 i; i < inspectors.length; ++i) dc.setInspector(inspectors[i], true);
         OpenBoxAccountFactory factory = new OpenBoxAccountFactory();
+        ReceivableNote note = new ReceivableNote(IERC20(token), dc, owner);
+        dc.setFinancier(address(note), true);
+        address lender = vm.envOr("LENDER_ADDR", address(0));
+        if (lender != address(0)) note.setLender(lender, true);
         vm.stopBroadcast();
 
         string memory k = "deploy";
@@ -48,10 +54,13 @@ contract Deploy is Script {
         vm.serializeAddress(k, "attester", attester);
         vm.serializeAddress(k, "inspectors", inspectors);
         vm.serializeUint(k, "deployBlock", block.number);
+        vm.serializeAddress(k, "receivableNote", address(note));
+        vm.serializeAddress(k, "lender", lender);
         string memory json = vm.serializeAddress(k, "deliveryCheckout", address(dc));
         vm.writeJson(json, string.concat(vm.projectRoot(), "/../deployments/", vm.toString(block.chainid), ".json"));
         console2.log("DeliveryCheckout", address(dc));
         console2.log("AccountFactory", address(factory));
+        console2.log("ReceivableNote", address(note));
         console2.log("Token", token);
     }
 }

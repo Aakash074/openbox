@@ -8,7 +8,10 @@
     "0xc4D50fE6d4c93BCF0E7B24383eD7CF0dD0ad393a",
     "0x191A3e615db85aA436fA1Ec4bf20143C7950b8f5"
   ],
+  "lender": "0x4Ac7fF1A4A9249f08C82277dFbEa287e7B1e3aFb",
   "mockToken": false,
   "owner": "0x783b2312Ed4dfbaFEa885E9Eb669E03876F3f51E",
+  "receivableNote": "0x8Fe03452e96603653F00b79C36175A759633a479",
+  "receivableNoteBlock": 12346714,
   "token": "0xcedfB56113143d55b2358b8CFbB0dEB5Ad2f55a7"
 }
