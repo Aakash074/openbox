@@ -6,6 +6,7 @@
  * With WORLD_CLIENT_ID/SECRET set, the approval runs against the real World IdP: scan the printed link/code in
  * World App. Without them it uses the mock household owner.
  * Run with the stack up:  pnpm dev:testnet --no-ui   then   npx tsx scripts/testnet/live-agentpass-refund.ts
+ * SIMULATE=1 uses the labelled demo fallback instead of World App (no World ID proof). API=<url> targets a hosted backend.
  */
 import { readFileSync } from "node:fs";
 import type { Address } from "viem";
@@ -64,7 +65,11 @@ if (!live) {
   console.log(`   denied path: ${dn.status} · buyer balance change ${((await bal(buyer.address)) - b0).toFixed(2)} USDT (agent did nothing)`);
 }
 const ap = (await api("POST", `/v1/orders/${s.ref}/accept-partial-refund`)).approval;
-if (live) {
+if (live && process.env.SIMULATE === "1") {
+  // Demo-only fallback for reviewers without World App: settles WITHOUT a World ID proof and is labelled as simulated.
+  console.log(`   SIMULATE=1: simulated owner approval (demo fallback, no World ID proof)`);
+  await api("POST", `/v1/world/requests/${ap.id}/simulate-approval`, {});
+} else if (live) {
   console.log(`   >>> Household owner: approve in World App\n       link: ${ap.verificationUri}\n       code: ${ap.userCode}`);
 } else {
   await api("POST", "/v1/world/mock/complete", { requestId: ap.id, persona: "owner", decision: "approve" });

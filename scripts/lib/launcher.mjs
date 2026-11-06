@@ -61,12 +61,15 @@ export async function startServices(run, env) {
   run("inspector-A", tsx, ts("services/inspector/src/server.ts"), {
     INSPECTOR_NAME: "Northstar Inspect (budget)", INSPECTOR_PORT: "4100", INSPECTOR_PUBLIC_URL: env.INSPECTOR_PUBLIC_URL ?? "http://localhost:4100",
   });
-  run("inspector-B", tsx, ts("services/inspector/src/server.ts"), {
+  // SINGLE_INSPECTOR=1 (512 MB hosts): skip the premium inspector. Its signed entry stays in the HCS directory,
+  // so the agent still lists it and refuses it on price, as it does locally.
+  const second = env.SINGLE_INSPECTOR !== "1";
+  if (second) run("inspector-B", tsx, ts("services/inspector/src/server.ts"), {
     INSPECTOR_NAME: "Precision Vision Labs (premium)", INSPECTOR_PORT: "4101", INSPECTOR_PUBLIC_URL: env.INSPECTOR2_PUBLIC_URL ?? "http://localhost:4101",
     INSPECTOR_PK: env.INSPECTOR2_PK, INSPECTOR_PRICE_USD: env.INSPECTOR2_PRICE_USD ?? "0.30", INSPECTOR_PAY_TO: env.INSPECTOR2_PAY_TO ?? "0.0.9003",
     HEDERA_INSPECTOR_ACCOUNT_ID: env.HEDERA_INSPECTOR2_ACCOUNT_ID, HEDERA_INSPECTOR_PRIVATE_KEY: env.HEDERA_INSPECTOR2_PRIVATE_KEY,
   });
-  await Promise.all([waitPort(4100), waitPort(4101)]);
+  await Promise.all([waitPort(4100), ...(second ? [waitPort(4101)] : [])]);
   run("backend", tsx, ts("services/backend/src/server.ts"), { LOG_LEVEL: "warn" });
   await waitPort(Number(env.BACKEND_PORT ?? 4000));
 }
