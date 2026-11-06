@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 900 600">
+  <rect width="900" height="600" fill="#c9a77c"/>
+  <rect x="60" y="40" width="780" height="520" fill="#d8bb92" stroke="#a5835a" stroke-width="6"/>
+  <rect x="140" y="110" width="620" height="380" rx="10" fill="#ffffff" stroke="#222" stroke-width="3"/>
+  <text x="170" y="170" font-family="Helvetica" font-size="40" font-weight="bold" fill="#111">AURORA X1 SMARTPHONE</text>
+  <text x="170" y="215" font-family="Helvetica" font-size="24" fill="#333">Model AX1-128 · Colour: Graphite</text>
+  <g fill="#111">
+    <rect x="170" y="245" width="4" height="90"/><rect x="180" y="245" width="8" height="90"/><rect x="194" y="245" width="3" height="90"/>
+    <rect x="202" y="245" width="6" height="90"/><rect x="214" y="245" width="2" height="90"/><rect x="222" y="245" width="9" height="90"/>
+    <rect x="236" y="245" width="4" height="90"/><rect x="246" y="245" width="3" height="90"/><rect x="254" y="245" width="7" height="90"/>
+    <rect x="266" y="245" width="2" height="90"/><rect x="274" y="245" width="5" height="90"/><rect x="284" y="245" width="8" height="90"/>
+    <rect x="298" y="245" width="3" height="90"/><rect x="306" y="245" width="6" height="90"/><rect x="318" y="245" width="4" height="90"/>
+    <rect x="328" y="245" width="9" height="90"/><rect x="342" y="245" width="2" height="90"/><rect x="350" y="245" width="5" height="90"/>
+  </g>
+  <text x="170" y="400" font-family="Courier" font-size="44" font-weight="bold" fill="#000">S/N: SN-AX1-7731-0042</text>
+  <text x="170" y="450" font-family="Helvetica" font-size="22" fill="#444">Northwind Gadgets · Made for OpenBox demo</text>
+
+  <!-- shipping damage: crushed corner, tear, water stain, puncture -->
+  <path d="M60 40 L300 40 L230 120 L170 95 L120 170 L60 210 Z" fill="#8a6a45" stroke="#4a3520" stroke-width="5"/>
+  <path d="M75 55 L250 50 M90 80 L200 70 M70 120 L140 105" stroke="#3b2a18" stroke-width="4"/>
+  <path d="M690 560 L715 480 L700 440 L740 400 L728 350 L770 300 L810 290" fill="none" stroke="#2a1d10" stroke-width="9"/>
+  <path d="M690 560 L715 480 L700 440 L740 400 L728 350 L770 300 L810 290" fill="none" stroke="#f1e2c8" stroke-width="3"/>
+  <ellipse cx="640" cy="230" rx="150" ry="85" fill="#7a5a36" fill-opacity="0.45"/>
+  <ellipse cx="660" cy="240" rx="95" ry="50" fill="#5d4126" fill-opacity="0.35"/>
+  <circle cx="760" cy="500" r="34" fill="#1b130a"/>
+  <path d="M726 500 L700 480 M794 500 L825 515 M760 466 L768 440 M760 534 L748 556" stroke="#1b130a" stroke-width="6"/>
+  <text x="560" y="535" font-family="Helvetica" font-size="26" font-weight="bold" fill="#8b0000" transform="rotate(-8 560 535)">CRUSHED IN TRANSIT</text>
+</svg>
