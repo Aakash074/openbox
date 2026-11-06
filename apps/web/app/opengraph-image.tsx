@@ -35,7 +35,7 @@ export default async function Image() {
             </div>
           </div>
           <div style={{ display: "flex", gap: 14, fontSize: 20, color: "#98A2B3" }}>
-            <span>World ID approvals</span><span>·</span><span>Inspected at the door</span><span>·</span><span>Logged on Hedera</span>
+            <span>World ID approvals</span><span>·</span><span>Inspected at the door</span><span>·</span><span>Agent pays via x402 on Hedera</span>
           </div>
         </div>
         <div style={{ display: "flex", position: "relative", width: 380, alignItems: "center", justifyContent: "center" }}>

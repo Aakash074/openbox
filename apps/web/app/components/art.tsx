@@ -594,7 +594,7 @@ const MiniParcel = () => (
  *  "horizontal" (≥1024px) or "vertical" (mobile). `animate={false}` renders static (reduced motion is automatic). */
 export function ProofPath({ orientation = "horizontal", animate = true, ...p }: ArtProps & { orientation?: "horizontal" | "vertical"; animate?: boolean }) {
   const H = orientation === "horizontal";
-  const label = p.title ?? "Buyer pays; payment is held; a World ID-verified courier delivers (the courier check is simulated in the hosted demo); the parcel is checked at the door; then the seller and courier are paid, or the buyer is refunded.";
+  const label = p.title ?? "Buyer pays; payment is held; a World ID-verified courier delivers (the courier check is simulated in the hosted demo); the parcel is checked at the door by an inspector the household AI agent pays over x402 on Hedera; then the seller and courier are paid, or the buyer is refunded.";
   const cls = `proof-path ${animate ? "" : "static"} ${p.className ?? ""}`;
   if (H) {
     const xs = [60, 200, 340, 480];
@@ -617,7 +617,7 @@ export function ProofPath({ orientation = "horizontal", animate = true, ...p }: 
         <PPLabel x={xs[0]} y={y + 52} title="Buyer pays" sub="USDT checkout" />
         <PPLabel x={xs[1]} y={y + 52} title="Payment held" sub="not sent yet" />
         <PPLabel x={xs[2]} y={y + 52} title="Courier verified" sub="World ID" note="simulated in demo" />
-        <PPLabel x={xs[3]} y={y + 52} title="Checked at door" sub="logged on Hedera" />
+        <PPLabel x={xs[3]} y={y + 52} title="Checked at door" sub="agent pays via x402" />
         <Coin x={656} y={40} tone="brand" glyph="store" d={1100} />
         <Coin x={656} y={118} tone="brand" glyph="truck" d={1200} />
         <Coin x={656} y={196} tone="info" glyph="return" d={0} dashed />
@@ -648,7 +648,7 @@ export function ProofPath({ orientation = "horizontal", animate = true, ...p }: 
       <PPLabel x={88} y={ys[0] - 2} title="Buyer pays" sub="USDT checkout" anchor="start" />
       <PPLabel x={88} y={ys[1] - 2} title="Payment held" sub="not sent yet" anchor="start" />
       <PPLabel x={88} y={ys[2] - 2} title="Courier verified" sub="World ID" note="simulated in demo" anchor="start" />
-      <PPLabel x={88} y={ys[3] - 2} title="Checked at door" sub="logged on Hedera" anchor="start" />
+      <PPLabel x={88} y={ys[3] - 2} title="Checked at door" sub="agent pays via x402" anchor="start" />
       <Coin x={x} y={440} tone="brand" glyph="store" d={1100} />
       <Coin x={150} y={440} tone="brand" glyph="truck" d={1200} />
       <Coin x={256} y={440} tone="info" glyph="return" d={0} dashed />

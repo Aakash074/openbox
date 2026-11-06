@@ -9,7 +9,7 @@ import { Courier, Inspection, MoneySplit, Parcel, ProofPath, RoleTile, type Role
 const STEPS: { title: string; body: string; art: ReactNode; tag: string; note?: string }[] = [
   { tag: "Checkout", title: "Buyer pays, the money is held", body: "One signature in USDT. No wallet popup, no gas. The payment is held for that one order, not sent to the seller.", art: <Parcel variant="closed" size={112} /> },
   { tag: "Dispatch", title: "A verified courier carries it", body: "The courier is bound to the order with World ID at pickup, and the same person must check in again at the door.", note: "Simulated in the hosted demo", art: <Courier verified size={112} /> },
-  { tag: "At the door", title: "The box is opened on camera", body: "The doorbell reads the parcel QR. An independent AI inspector checks the serial, and the verdict is logged on Hedera.", art: <Inspection size={148} /> },
+  { tag: "At the door", title: "The box is opened on camera", body: "The doorbell reads the parcel QR. Your household AI agent hires an independent inspector and pays it per check with x402 on Hedera, no human in the loop. The inspector checks the serial and the verdict is logged on Hedera.", art: <Inspection size={148} /> },
   { tag: "Settlement", title: "Everyone is paid in one call", body: "Right item: seller and courier are paid. Wrong item: the buyer is refunded and the courier still gets their fee.", art: <Parcel variant="open" size={112} /> },
 ];
 
@@ -20,7 +20,7 @@ const ROLES: { role: Role; title: string; body: string; href: string; cta: strin
   { role: "lender", title: "Lenders", body: "Buy paid orders as receivable notes. Repaid automatically at verified delivery.", href: "/lender", cta: "Open the lender desk" },
 ];
 
-const TRUST: [IconName, string][] = [["coins", "USDT on Whitechain"], ["user-check", "World ID"], ["shield-check", "Audit log on Hedera"]];
+const TRUST: [IconName, string][] = [["coins", "USDT on Whitechain"], ["user-check", "World ID"], ["sparkle", "AI agent pays via x402 on Hedera"]];
 
 /** Tiny static highlighter for the integration snippet: comments, strings, the SDK global and calls. */
 function highlight(code: string): ReactNode[] {
@@ -178,7 +178,7 @@ export default function Home() {
         <div className="lp-foot-in">
           <div className="lp-foot-brand">
             <Link href="/" className="lp-brand lp-brand-light"><Logo size={24} /><span>OpenBox</span></Link>
-            <p>Checkout with verified release. Settled in USDT on Whitechain, refunds approved with World ID, inspections logged on Hedera.</p>
+            <p>Checkout with verified release. Settled in USDT on Whitechain, refunds approved with World ID, inspections paid by an AI agent over x402 on Hedera.</p>
           </div>
           <nav className="lp-foot-cols" aria-label="Footer">
             <div><h4>Try it</h4><Link href="/demo">Live demo</Link><a href={store} target="_blank" rel="noreferrer">Demo store</a><Link href="/kiosk">Doorbell screen</Link></div>
