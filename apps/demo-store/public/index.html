@@ -31,19 +31,23 @@
     .perks { display:flex; gap:20px; flex-wrap:wrap; margin-top:16px; font-size:13px; color:var(--mut); }
     .perks span { display:inline-flex; align-items:center; gap:6px; }
     .perks svg { width:16px; height:16px; color: var(--navy); }
-    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:20px; padding-bottom:48px; }
-    .card { background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; }
-    .img { aspect-ratio: 4/3; display:grid; place-items:center; background: linear-gradient(160deg,#F1F2F6,#E6E8EF); }
-    .img svg { width: 46%; height: auto; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:20px; padding-bottom:56px; align-items:start; } /* start: an inline checkout error grows only its own card */
+    .card { background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; transition: box-shadow .2s ease, border-color .2s ease; }
+    .card:hover { border-color:#D6DAE3; box-shadow: 0 12px 28px -16px rgb(20 26 46 / .25); }
+    .img { position:relative; aspect-ratio: 4/3; display:grid; place-items:center; background: radial-gradient(70% 60% at 50% 45%, #fff 0%, rgb(255 255 255 / 0) 70%), linear-gradient(160deg,#F1F5F9,#E2E8F0); }
+    .img img, .img > svg { width: 58%; height: auto; max-height: 82%; object-fit: contain; transition: transform .35s cubic-bezier(.2,0,0,1); }
+    .card:hover .img img { transform: translateY(-3px) scale(1.02); }
+    .badge-new { position:absolute; top:12px; left:12px; font-size:11px; font-weight:600; letter-spacing:.02em; color:var(--amber-ink); background:#FFF4DC; border:1px solid #F7D9A0; border-radius:999px; padding:2px 8px; }
     .body { padding:16px 18px 18px; display:flex; flex-direction:column; flex:1; }
     .tag { font-size:12px; color:var(--mut); font-weight:500; }
     .name { font-weight:600; font-size:16px; margin-top:2px; }
-    .desc { color:var(--mut); font-size:14px; margin-top:4px; flex:1; }
+    .desc { color:var(--mut); font-size:14px; margin-top:4px; flex:1; min-height:42px; } /* 2 lines: price rows line up without stretching cards */
     .price-row { display:flex; align-items:baseline; justify-content:space-between; margin:12px 0 12px; }
     .price { font-weight:700; font-size:20px; font-variant-numeric: tabular-nums; }
     .price small { font-size:13px; color:var(--mut); font-weight:500; margin-left:3px; }
     .ship { font-size:12px; color:#1F7A4D; font-weight:500; }
-    .skel { background:#EEF0F4; border-radius:6px; }
+    .skel { background: linear-gradient(90deg,#EEF0F4,#F6F7F9,#EEF0F4); background-size:200% 100%; animation: shimmer 1.6s ease-in-out infinite; border-radius:6px; }
+    @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
     footer.site { border-top:1px solid var(--line); padding:20px 0; font-size:13px; color:var(--mut); background:#fff; }
 
     /* developer panel: not part of the shop — shows the integration + webhooks for the demo */
@@ -53,20 +57,30 @@
     .dev-h { display:flex; align-items:center; gap:8px; padding:12px 16px; border-bottom:1px solid #222A36; }
     .dev-h b { font-weight:600; }
     .dev-badge { font-size:11px; color:#9AA4B2; border:1px dashed #3B4554; border-radius:999px; padding:1px 8px; }
-    .dev-h button { margin-left:auto; all:unset; cursor:pointer; color:#9AA4B2; padding:4px 8px; border-radius:6px; }
+    .dev-h button { all:unset; margin-left:auto; cursor:pointer; color:#9AA4B2; padding:4px 8px; border-radius:6px; }
     .dev-h button:hover { background:#1B222D; color:#fff; }
     .dev-h button:focus-visible { outline:2px solid #F5B544; }
     .dev section { padding: 14px 16px; border-bottom:1px solid #222A36; min-height: 0; }
     .dev section.code { flex: 1.4; overflow:auto; }
     .dev section.hooks { flex: 1; overflow:auto; }
     .dev h3 { margin:0 0 8px; font-size:12px; font-weight:600; color:#9AA4B2; display:flex; justify-content:space-between; }
-    .dev pre { margin:0; font:11.5px/1.55 var(--mono); white-space:pre-wrap; overflow-wrap:anywhere; color:#E6EDF3; }
+    .dev pre { margin:0; font:12px/1.6 var(--mono); white-space:pre; overflow-x:auto; tab-size:2; color:#E6EDF3; padding-bottom:6px; }
+    .dev pre .c { color:#7D8590; }
     #hooks { font:12px/1.5 var(--mono); }
     #hooks div { display:flex; gap:8px; align-items:baseline; padding:6px 0; border-bottom:1px solid #1B222D; }
     #hooks .ok { color:#56D364; } #hooks .bad { color:#F85149; }
     #hooks .ref { color:#9AA4B2; margin-left:auto; white-space:nowrap; }
-    .dev-toggle[aria-expanded="true"] { background:#1E2A4A; color:#fff; }
-    .dev-toggle { border:0; background:transparent; cursor:pointer; font:inherit; }
+    /* floating "Developer" pill: out of the shopper's navigation */
+    .dev-pill { position:fixed; right:20px; bottom:20px; z-index:19; display:inline-flex; align-items:center; gap:8px; height:40px; padding:0 16px 0 12px; border:1px solid #2A3342; border-radius:999px;
+      background:#0D1117; color:#E6EDF3; font:600 13px/1 var(--font); cursor:pointer; box-shadow:0 10px 24px -8px rgb(13 17 23 / .5); transition: transform .15s ease, box-shadow .15s ease; }
+    .dev-pill:hover { transform: translateY(-1px); box-shadow:0 14px 28px -10px rgb(13 17 23 / .6); }
+    .dev-pill svg { width:16px; height:16px; color:var(--amber); }
+    .dev-pill .live { width:7px; height:7px; border-radius:50%; background:#56D364; box-shadow:0 0 0 3px rgb(86 211 100 / .2); }
+    .dev-pill:focus-visible { outline:2px solid var(--amber); outline-offset:2px; }
+    body.dev-open .dev-pill { display:none; }
+    body.embed .promo { font-size: 12px; padding: 6px 12px; }
+    body.embed .hero { padding: 24px 0 16px; }
+    body.embed .hero h1 { font-size: 24px; }
 
     @media (max-width: 1200px) {
       body.dev-open { padding-right: 0; }
@@ -77,6 +91,17 @@
       .wrap { padding: 0 16px; }
       .hero h1 { font-size: 26px; }
       .grid { grid-template-columns: 1fr; }
+      .perks { gap:8px 16px; }
+      /* phones: the pill sits in the page flow after the footer, so it can never cover "Pay with OpenBox" */
+      .dev-pill { position:static; display:flex; width:max-content; margin:0 16px 24px; }
+      footer.site { padding-bottom:16px; }
+    }
+    /* embedded in the /demo split screen: no floating pill over the shop */
+    body.embed .dev-pill { display:none; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
+      .skel { animation:none !important; }
+      .card:hover .img img, .dev-pill:hover { transform:none; }
     }
   </style>
 </head>
@@ -87,7 +112,6 @@
       <a class="logo" href="/"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#1E2A4A"/><path d="M9 23V9l14 14V9" fill="none" stroke="#F5B544" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Northwind</a>
       <nav class="cats" aria-label="Categories"><a href="#">Phones</a><a href="#">Audio</a><a href="#">Tablets</a><a href="#">Support</a></nav>
       <div class="hdr-right">
-        <button type="button" class="icon-btn dev-toggle" id="dev-open" aria-controls="dev" aria-expanded="false" aria-label="Developer panel" title="Developer panel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg></button>
         <a class="icon-btn" href="#" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></a>
         <a class="icon-btn" href="#" aria-label="Cart, 0 items"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg><span class="cart-count">0</span></a>
       </div>
@@ -112,6 +136,8 @@
   </main>
   <footer class="site"><div class="wrap">© Northwind Gadgets · Prices in USDT (digital US dollars) · Demo store for OpenBox</div></footer>
 
+  <button type="button" class="dev-pill" id="dev-open" aria-controls="dev" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg><span class="dev-pill-t">Developer</span><span class="live" aria-hidden="true"></span></button>
+
   <aside class="dev" id="dev" aria-label="Developer panel" hidden>
     <div class="dev-h"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg><b>Developer panel</b><span class="dev-badge">not part of the shop</span><button type="button" id="dev-close" aria-label="Close developer panel">Hide</button></div>
     <section class="code"><h3><span>Our whole OpenBox integration · checkout.js</span></h3><pre id="src"></pre></section>
@@ -123,12 +149,12 @@
   <script>
     window.OPENBOX_API = "__API__";
     window.OPENBOX_WEB = "__WEB__";
-    // Neutral product illustrations (no photos in the demo).
-    const art = {
-      "aurora-x1": '<svg viewBox="0 0 120 120" aria-hidden="true"><rect x="36" y="10" width="48" height="100" rx="10" fill="#1E2A4A"/><rect x="40" y="16" width="40" height="84" rx="6" fill="#3A4A75"/><circle cx="60" cy="105" r="2.5" fill="#8C97B5"/><rect x="52" y="12" width="16" height="2.5" rx="1.25" fill="#8C97B5"/></svg>',
-      pixelbuds: '<svg viewBox="0 0 120 120" aria-hidden="true"><rect x="22" y="40" width="76" height="56" rx="26" fill="#E9EBF2" stroke="#1E2A4A" stroke-width="3"/><line x1="24" y1="62" x2="96" y2="62" stroke="#1E2A4A" stroke-width="2"/><circle cx="46" cy="52" r="7" fill="#1E2A4A"/><circle cx="74" cy="52" r="7" fill="#1E2A4A"/><circle cx="60" cy="80" r="2.5" fill="#F5B544"/></svg>',
-      "lumen-tab": '<svg viewBox="0 0 120 120" aria-hidden="true"><rect x="14" y="24" width="92" height="70" rx="8" fill="#1E2A4A"/><rect x="20" y="30" width="80" height="58" rx="4" fill="#3A4A75"/><circle cx="60" cy="27" r="1.5" fill="#8C97B5"/></svg>',
-    };
+    // Product shots: illustrations served from the OpenBox web origin (static SVGs, ~4 KB each).
+    const ART_SKUS = ["aurora-x1", "pixelbuds", "lumen-tab"];
+    const FALLBACK = '<svg viewBox="0 0 120 120" aria-hidden="true"><rect x="30" y="36" width="60" height="52" rx="8" fill="#E2E8F0" stroke="#94A3B8" stroke-width="2"/><path d="M30 52h60" stroke="#94A3B8" stroke-width="2"/></svg>';
+    const art = (sku, name) => ART_SKUS.includes(sku)
+      ? `<img src="${OPENBOX_WEB}/art/${sku}.svg" alt="${name}" width="240" height="240" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('span'),{innerHTML:FALLBACK}).firstChild)">`
+      : FALLBACK;
     const info = {
       "aurora-x1": ["Phones", "6.4\" OLED, 128 GB, all-day battery. Unlocked for any carrier."],
       pixelbuds: ["Audio", "Noise-cancelling wireless earbuds with a pocket charging case."],
@@ -137,7 +163,7 @@
     fetch(`${OPENBOX_API}/v1/catalog/pk_demo_openbox`).then((r) => r.json()).then(({ products }) => {
       document.getElementById("products").innerHTML = products.map((p) => `
         <article class="card" data-sku="${p.sku}">
-          <div class="img">${art[p.sku] ?? art["aurora-x1"]}</div>
+          <div class="img">${art(p.sku, p.name)}${p.sku === "pixelbuds" ? '<span class="badge-new">New</span>' : ""}</div>
           <div class="body">
             <div class="tag">${(info[p.sku] ?? ["Gadgets"])[0]}</div>
             <div class="name">${p.name}</div>
@@ -150,13 +176,19 @@
     }).catch(() => {
       document.getElementById("products").innerHTML = '<p style="color:var(--mut)">We couldn\'t load the catalogue. Please refresh the page.</p>';
     });
-    fetch("/checkout.js").then((r) => r.text()).then((t) => (document.getElementById("src").textContent = t));
+    fetch("/checkout.js").then((r) => r.text()).then((t) => {
+      const esc = (x) => x.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+      document.getElementById("src").innerHTML = t.split("\n").map((l) => { const i = l.indexOf("//"); return i < 0 ? esc(l) : esc(l.slice(0, i)) + `<span class="c">${esc(l.slice(i))}</span>`; }).join("\n");
+    });
 
-    // Developer panel (not part of the shop): toggled from the header; open by default only with ?dev=1.
+    // Developer panel (not part of the shop): opened from the floating pill; open by default only with ?dev=1.
     const dev = document.getElementById("dev"), toggle = document.getElementById("dev-open");
     const setDev = (open) => { dev.hidden = !open; toggle.setAttribute("aria-expanded", String(open)); document.body.classList.toggle("dev-open", open); };
-    setDev(new URLSearchParams(location.search).get("dev") === "1");
-    toggle.onclick = () => { const open = dev.hidden; setDev(open); if (open) document.getElementById("dev-close").focus(); };
+    const qs = new URLSearchParams(location.search);
+    let framed = false; try { framed = window.self !== window.top; } catch { framed = true; }
+    if (qs.has("embed") || framed) document.body.classList.add("embed");
+    setDev(qs.get("dev") === "1");
+    toggle.onclick = () => { setDev(true); document.getElementById("dev-close").focus(); };
     document.getElementById("dev-close").onclick = () => { setDev(false); toggle.focus(); };
 
     const hooks = document.getElementById("hooks");
