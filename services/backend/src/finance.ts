@@ -34,9 +34,13 @@ export const lenderAddress = (): Address | undefined =>
   accounts.lender?.address ?? deployment.lender ?? (process.env.LENDER_ADDR as Address | undefined);
 
 /** Advance and holdback for a face value, from FINANCE_ADVANCE_BPS / FINANCE_HOLDBACK_BPS. */
+/** Advance and bond are rounded down to whole cents, so fee, today's payment and bond all reconcile exactly. */
+const CENT = 10_000n; // 0.01 USDT at 6 decimals
+const toCents = (v: bigint) => (v / CENT) * CENT;
+
 export function quoteFor(face: bigint) {
-  const advance = (face * cfg.finance.advanceBps) / 10_000n;
-  let holdback = (face * cfg.finance.holdbackBps) / 10_000n;
+  const advance = toCents((face * cfg.finance.advanceBps) / 10_000n);
+  let holdback = toCents((face * cfg.finance.holdbackBps) / 10_000n);
   if (holdback > advance) holdback = advance;
   return { face, advance, holdback };
 }
