@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import QRCode from "qrcode";
 import { api, isLocal, useEvents } from "../lib/api";
 
@@ -41,6 +41,13 @@ const ICONS: Record<string, string> = {
   store: '<path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M2 7h20v3a2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0 2 2 0 0 1-4 0Z"/>',
   flask: '<path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 16h12.96"/>',
   door: '<path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h3"/><path d="M13 20h9"/><path d="M10 12v.01"/><path d="M13 4.56v16.16a1 1 0 0 1-1.24.97L5 20V5.56a2 2 0 0 1 1.51-1.94l4-1A2 2 0 0 1 13 4.56Z"/>',
+  coins: '<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>',
+  "scan-line": '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/>',
+  "shield-check": '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
+  "user-check": '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/>',
+  split: '<path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.17-2.87L3 3"/><path d="m15 9 6-6"/>',
+  doorbell: '<rect x="6" y="2" width="12" height="20" rx="4"/><circle cx="12" cy="8.5" r="2.5"/><circle cx="12" cy="16" r="1.75"/>',
+  sparkle: '<path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5a2 2 0 0 0 1.44 1.44l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z"/>',
 };
 export type IconName = keyof typeof ICONS;
 export function Icon({ name, className = "", label }: { name: IconName; className?: string; label?: string }) {
@@ -50,13 +57,27 @@ export function Icon({ name, className = "", label }: { name: IconName; classNam
   );
 }
 
-/** OpenBox logomark: a parcel with a verified tick. */
-export function Logo({ className = "" }: { className?: string }) {
+/** OpenBox logomark: a parcel with a verified tick.
+ *  size: px (default 24; CSS such as `.brand svg` / `.secured svg.mark` may still override it).
+ *  variant: "color" (teal tile, default) · "dark" (for ink backgrounds: lighter tile edge, teal tick) · "mono" (single colour, currentColor, no tile). */
+export function Logo({ className = "", size = 24, variant = "color", label }: { className?: string; size?: number; variant?: "color" | "dark" | "mono"; label?: string }) {
+  const a11y = label ? { role: "img", "aria-label": label } : { "aria-hidden": true as const };
+  if (variant === "mono") {
+    return (
+      <svg className={`mark ${className}`} viewBox="0 0 32 32" width={size} height={size} {...a11y}>
+        <rect x="1" y="1" width="30" height="30" rx="7.5" fill="none" stroke="currentColor" strokeWidth="2" />
+        <path d="M16 6.5 25 11v10l-9 4.5L7 21V11z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+        <path d="m12 16 3 3 5.5-6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  const dark = variant === "dark";
   return (
-    <svg className={`mark ${className}`} viewBox="0 0 32 32" aria-hidden="true">
-      <rect width="32" height="32" rx="8" fill="#0F766E" />
+    <svg className={`mark ${className}`} viewBox="0 0 32 32" width={size} height={size} {...a11y}>
+      <rect width="32" height="32" rx="8" fill={dark ? "#0D9488" : "#0F766E"} />
+      {dark && <rect x=".5" y=".5" width="31" height="31" rx="7.5" fill="none" stroke="#5EEAD4" strokeOpacity=".45" />}
       <path d="M16 6.5 25 11v10l-9 4.5L7 21V11z" fill="none" stroke="#fff" strokeWidth="2" strokeLinejoin="round" />
-      <path d="m12 16 3 3 5.5-6" fill="none" stroke="#5EEAD4" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="m12 16 3 3 5.5-6" fill="none" stroke={dark ? "#CCFBF1" : "#5EEAD4"} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -67,12 +88,19 @@ export function Brand({ href = "/" }: { href?: string }) {
 /* ─── formatting ────────────────────────────────────────────────────────────────────────── */
 export const fmtAmount = (v?: string | number | null) => (v == null || v === "" || Number.isNaN(Number(v)) ? "—" : Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 
-/** Money: 2 decimals, tabular, muted currency suffix. */
-export function Money({ v, cur = "USDT", strong, muted }: { v?: string | number | null; cur?: string | null; strong?: boolean; muted?: boolean }) {
-  if (v == null || v === "") return <span className="money muted">—</span>;
+/** Amount for display: like fmtAmount but negatives use a true minus (U+2212) and `sign` adds "+" to positives. */
+export const fmtMoney = (v?: string | number | null, sign = false) => {
+  const s = fmtAmount(v);
+  if (s === "—") return s;
+  return s.startsWith("-") ? `\u2212${s.slice(1)}` : sign && Number(v) > 0 ? `+${s}` : s;
+};
+
+/** Money: 2 decimals, tabular, muted currency suffix. Negatives render with U+2212; `sign` shows "+" on positives. */
+export function Money({ v, cur = "USDT", strong, muted, sign }: { v?: string | number | null; cur?: string | null; strong?: boolean; muted?: boolean; sign?: boolean }) {
+  if (!hasAmount(v)) return <span className="money muted">—</span>;
   return (
     <span className="money" style={{ fontWeight: strong ? 600 : undefined, color: muted ? "var(--text-3)" : undefined }}>
-      {fmtAmount(v)}{cur && <span className="cur">{cur}</span>}
+      {fmtMoney(v, sign)}{cur && <span className="cur">{cur}</span>}
     </span>
   );
 }
@@ -151,7 +179,7 @@ export function HashscanLink({ txId, url }: { txId?: string; url?: string }) {
 }
 
 /* ─── status ────────────────────────────────────────────────────────────────────────────── */
-type Tone = "success" | "warning" | "danger" | "info" | "neutral" | "brand";
+export type Tone = "success" | "warning" | "danger" | "info" | "neutral" | "brand" | "proof" | "refund";
 const STATUS: Record<string, [string, Tone]> = {
   created: ["Created", "neutral"],
   paid: ["Paid · held", "info"],
@@ -182,13 +210,17 @@ const STATUS: Record<string, [string, Tone]> = {
 export const outcomeKey = (o: { outcome?: string | null; inspection?: { outcome?: string } | null }) =>
   o.outcome === "timeout" && o.inspection?.outcome === "damaged" ? "damaged_not_accepted" : o.outcome;
 export const statusLabel = (s?: string | null) => (s ? STATUS[s]?.[0] ?? s.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()) : "—");
-export function Badge({ tone = "neutral", children, dot = true, title }: { tone?: Tone; children: ReactNode; dot?: boolean; title?: string }) {
-  return <span className={`badge ${tone} ${dot ? "" : "nodot"}`} title={title}>{children}</span>;
+/** Badge. `live` adds a pulsing halo to the dot (in-progress states); hidden under reduced motion. */
+export function Badge({ tone = "neutral", children, dot = true, live, title }: { tone?: Tone; children: ReactNode; dot?: boolean; live?: boolean; title?: string }) {
+  return <span className={`badge ${tone}${dot ? "" : " nodot"}${live && dot ? " live" : ""}`} title={title}>{children}</span>;
 }
-export function StatusBadge({ s }: { s?: string | null }) {
+/** Statuses that are actively in progress get a live dot by default. */
+export const LIVE_STATUSES = new Set(["dispatched", "handed_over", "awaiting_buyer", "inspecting", "pending", "creating", "validating", "returning"]);
+/** Status badge; re-keys on `s` so a status change crossfades. `live` overrides the default live-dot choice. */
+export function StatusBadge({ s, live }: { s?: string | null; live?: boolean }) {
   if (!s) return <span className="muted">—</span>;
   const [label, tone] = STATUS[s] ?? [statusLabel(s), "neutral" as Tone];
-  return <Badge tone={tone}>{label}</Badge>;
+  return <Badge key={s} tone={tone} live={live ?? LIVE_STATUSES.has(s)}>{label}</Badge>;
 }
 /** Back-compat. */
 export const Pill = ({ s }: { s?: string | null }) => <StatusBadge s={s} />;
@@ -221,12 +253,15 @@ export function Card({ title, desc, actions, children, footer, flush, className 
   );
 }
 
+/** True when `v` is a real amount (not null / empty / NaN), so a currency unit may be shown next to it. */
+export const hasAmount = (v: unknown): v is string | number => v != null && v !== "" && !Number.isNaN(Number(v));
+
 export function KpiTile({ label, value, cur = "USDT", sub, loading, error, icon }: { label: string; value?: string | number | null; cur?: string | null; sub?: ReactNode; loading?: boolean; error?: boolean; icon?: IconName }) {
   return (
     <div className="card kpi">
       <div className="kpi-label">{icon && <Icon name={icon} />}{label}</div>
       <div className="kpi-value">
-        {loading ? <Skeleton w={110} h={28} /> : error || value == null ? "—" : <>{cur ? fmtAmount(value) : value}{cur && <span className="cur">{cur}</span>}</>}
+        {loading ? <Skeleton w={110} h={28} /> : error || !hasAmount(value) ? "—" : <>{cur ? fmtMoney(value) : value}{cur && <span className="cur">{cur}</span>}</>}
       </div>
       <div className="kpi-sub">{loading ? <Skeleton w={90} h={12} /> : sub ?? " "}</div>
     </div>
@@ -254,10 +289,12 @@ export function Callout({ tone = "info", title, children, action, icon }: { tone
   );
 }
 
-export function EmptyState({ icon = "package", title, children, action, small }: { icon?: IconName; title: ReactNode; children?: ReactNode; action?: ReactNode; small?: boolean }) {
+/** Empty state. Pass `art` (e.g. <EmptyBox/> from ./art) for a 96px spot illustration (80px when `small`);
+ *  without it the small icon tile is used. */
+export function EmptyState({ icon = "package", art, title, children, action, small }: { icon?: IconName; art?: ReactNode; title: ReactNode; children?: ReactNode; action?: ReactNode; small?: boolean }) {
   return (
     <div className={`empty ${small ? "sm" : ""}`}>
-      <div className="empty-icon"><Icon name={icon} /></div>
+      {art ? <div className="empty-art" aria-hidden="true">{art}</div> : <div className="empty-icon"><Icon name={icon} /></div>}
       <div className="empty-title">{title}</div>
       {children && <div className="empty-body">{children}</div>}
       {action && <div className="empty-action">{action}</div>}
@@ -284,12 +321,45 @@ export function Stepper({ steps, responsive = true, label = "Progress" }: { step
   );
 }
 
+/** Tabs with a sliding ink bar and optional counts. Renders `.tabs.has-ink` (role=tablist).
+ *  items: [{ id, label, count? }] · value: selected id · onChange(id). Arrow keys move between tabs. */
+export function Tabs<T extends string>({ items, value, onChange, label = "Sections", className = "" }: { items: { id: T; label: ReactNode; count?: number | null }[]; value: T; onChange: (id: T) => void; label?: string; className?: string }) {
+  const wrap = useRef<HTMLDivElement>(null);
+  const [ink, setInk] = useState<{ x: number; w: number } | null>(null);
+  useEffect(() => {
+    const place = () => {
+      const el = wrap.current?.querySelector<HTMLButtonElement>('[aria-selected="true"]');
+      if (el) setInk({ x: el.offsetLeft + 12, w: Math.max(0, el.offsetWidth - 24) });
+    };
+    place();
+    window.addEventListener("resize", place);
+    return () => window.removeEventListener("resize", place);
+  }, [value, items.length]);
+  const onKey = (e: ReactKeyboardEvent) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    const i = items.findIndex((t) => t.id === value);
+    const n = items[(i + (e.key === "ArrowRight" ? 1 : items.length - 1)) % items.length];
+    onChange(n.id);
+    requestAnimationFrame(() => wrap.current?.querySelector<HTMLButtonElement>('[aria-selected="true"]')?.focus());
+  };
+  return (
+    <div ref={wrap} className={`tabs has-ink ${className}`} role="tablist" aria-label={label} onKeyDown={onKey}>
+      {items.map((t) => (
+        <button key={t.id} type="button" role="tab" aria-selected={t.id === value} tabIndex={t.id === value ? 0 : -1} onClick={() => onChange(t.id)}>
+          {t.label}{t.count != null && <span className="tab-count">{t.count}</span>}
+        </button>
+      ))}
+      {ink && <span className="tab-ink" aria-hidden="true" style={{ width: ink.w, transform: `translateX(${ink.x}px)` }} />}
+    </div>
+  );
+}
+
 export function Field({ label, htmlFor, help, children }: { label: string; htmlFor: string; help?: ReactNode; children: ReactNode }) {
   return <div className="field"><label htmlFor={htmlFor}>{label}</label>{children}{help && <div className="help">{help}</div>}</div>;
 }
 
 export function CodeBlock({ code }: { code: string }) {
-  return <div className="code-block"><pre><code>{code}</code></pre><CopyButton value={code} label="Copy code" /></div>;
+  return <div className="code-block"><pre tabIndex={0} role="region" aria-label="Code example"><code>{code}</code></pre><CopyButton value={code} label="Copy code" /></div>;
 }
 
 /* ─── receipts: contract events → buyer-friendly labels, grouped by transaction ─────────── */
@@ -447,29 +517,52 @@ export function InspectionList({ i, expected, audience = "merchant" }: { i: any;
 }
 
 /* ─── overlays: drawer + dialog (focus moves in, Esc closes, focus returns) ─────────────── */
-export function useModal(onClose: () => void) {
-  const ref = useRef<HTMLButtonElement>(null);
+const reducedMotion = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+/** Modal plumbing. Returns a ref for the dialog's heading: put it on an element with tabIndex={-1}; it receives focus on open
+ *  (no heavy focus ring on the close button for mouse users, and screen readers announce the title). Esc closes,
+ *  body scroll locks, and focus returns to the opener on close. */
+export function useModal<T extends HTMLElement = HTMLHeadingElement>(onClose: () => void) {
+  const ref = useRef<T>(null);
+  const close = useRef(onClose);
+  close.current = onClose;
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
-    ref.current?.focus();
-    const k = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    ref.current?.focus({ preventScroll: true });
+    const k = (e: KeyboardEvent) => { if (e.key === "Escape") close.current(); };
     document.addEventListener("keydown", k);
     const o = document.body.style.overflow; document.body.style.overflow = "hidden";
     return () => { document.removeEventListener("keydown", k); document.body.style.overflow = o; prev?.focus?.(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return ref;
 }
 
+/** Plays the exit animation (dur-2), then calls onClose. Instant under reduced motion. */
+function useExit(onClose: () => void) {
+  const [closing, setClosing] = useState(false);
+  const busy = useRef(false);
+  const request = () => {
+    if (busy.current) return;
+    busy.current = true;
+    if (reducedMotion()) { onClose(); busy.current = false; return; }
+    setClosing(true);
+    // If the parent declines to close (e.g. busy), the overlay comes back instead of staying invisible.
+    setTimeout(() => { onClose(); busy.current = false; setClosing(false); }, 190);
+  };
+  return { closing, request, state: closing ? "closing" : "open" } as const;
+}
+
 export function Drawer({ title, sub, children, onClose }: { title: ReactNode; sub?: ReactNode; children: ReactNode; onClose: () => void }) {
-  const closeRef = useModal(onClose);
+  const exit = useExit(onClose);
+  const headRef = useModal(exit.request);
   return (
     <>
-      <div className="overlay" onClick={onClose} />
-      <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+      <div className="overlay" data-state={exit.state} onClick={exit.request} />
+      <aside className="drawer" data-state={exit.state} role="dialog" aria-modal="true" aria-labelledby="drawer-title">
         <div className="drawer-h">
-          <div><h2 id="drawer-title">{title}</h2>{sub}</div>
-          <button ref={closeRef} type="button" className="btn ghost sm" aria-label="Close" onClick={onClose}><Icon name="x" /></button>
+          <div className="grow"><h2 id="drawer-title" ref={headRef} tabIndex={-1}>{title}</h2></div>
+          <button type="button" className="btn ghost sm" aria-label="Close" onClick={exit.request}><Icon name="x" /></button>
+          {sub && <div className="drawer-sub">{sub}</div>}
         </div>
         <div className="drawer-b">{children}</div>
       </aside>
@@ -478,14 +571,15 @@ export function Drawer({ title, sub, children, onClose }: { title: ReactNode; su
 }
 
 export function Dialog({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
-  const closeRef = useModal(onClose);
+  const exit = useExit(onClose);
+  const headRef = useModal(exit.request);
   return (
     <>
-      <div className="overlay" onClick={onClose} />
-      <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+      <div className="overlay" data-state={exit.state} onClick={exit.request} />
+      <div className="dialog" data-state={exit.state} role="dialog" aria-modal="true" aria-labelledby="dialog-title">
         <div className="row between" style={{ padding: "20px 24px 0" }}>
-          <h2 id="dialog-title">{title}</h2>
-          <button ref={closeRef} type="button" className="btn ghost sm" aria-label="Close" onClick={onClose}><Icon name="x" /></button>
+          <h2 id="dialog-title" ref={headRef} tabIndex={-1}>{title}</h2>
+          <button type="button" className="btn ghost sm" aria-label="Close" onClick={exit.request}><Icon name="x" /></button>
         </div>
         {children}
       </div>
