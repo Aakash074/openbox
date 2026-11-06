@@ -10,7 +10,8 @@
     "e2e:local": "tsx scripts/e2e-local.ts",
     "typecheck": "pnpm -r typecheck",
     "dev:testnet": "node scripts/dev-testnet.mjs",
-    "live:order": "tsx scripts/testnet/live-order.ts"
+    "live:order": "tsx scripts/testnet/live-order.ts",
+    "start:hosted": "node scripts/render-start.mjs"
   },
   "devDependencies": {
     "@openbox/hedera": "workspace:^",
