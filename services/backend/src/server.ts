@@ -17,6 +17,7 @@ import { mockComplete, PERSONAS } from "./world/mock";
 import { discoverInspectors, inspect, lastFrame, startKeeper, topics } from "./agent/household";
 import { policySummary } from "./agent/policy";
 import { PolicyRefusal } from "./agent/x402";
+import { householdApprovals, householdOverview } from "./household";
 
 // ---- seed demo merchant + catalog ------------------------------------------------------
 function seed() {
@@ -201,6 +202,10 @@ app.get("/v1/hcs/log", async () => {
   const msgs = await topics.log.read();
   return { topicId: topics.log.id, live: topics.log.live, messages: msgs.slice(-50).reverse() };
 });
+
+// ---- household app (read-only; see household.ts for the demo's one-household simplification) ------
+app.get("/v1/household/overview", async () => householdOverview());
+app.get("/v1/household/approvals", async () => householdApprovals());
 
 // ---- merchant ------------------------------------------------------------------------------
 app.get("/v1/merchant/orders", async (req) => merchantOrders(merchantAuth(req)));
