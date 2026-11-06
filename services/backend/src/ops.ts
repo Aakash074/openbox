@@ -190,6 +190,9 @@ const lastFund = new Map<string, number>();
 /** DEMO_MODE only. Local: mint MockUSDT. Whitechain: send official USDT from a demo treasury wallet. */
 export async function demoFund(address: Address, amountUsdt = Number(process.env.DEMO_FUND_USDT ?? 200)) {
   if (!cfg.demoMode) throw new Error("demo funding disabled");
+  // Official testnet USDT is scarce (it can't be minted): top up just enough for one purchase,
+  // whatever the caller asks for. Only the local mock token honours larger amounts.
+  if (!deployment.mockToken) amountUsdt = Math.min(amountUsdt, Number(process.env.DEMO_FUND_USDT ?? 7));
   const k = address.toLowerCase();
   if ((lastFund.get(k) ?? 0) > now() - 60) throw new Error("funded recently");
   lastFund.set(k, now());
