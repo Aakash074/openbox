@@ -119,6 +119,21 @@ pnpm dev:local        # local chain + all services + web + store
 
 Then open http://localhost:5174 (store) and http://localhost:3000 (apps).
 
+**Add it to your store (SDK)**
+
+The `openbox-checkout` SDK ([packages/sdk](packages/sdk)) adds a "Pay with OpenBox" button to any product page. The demo store's whole integration is [checkout.js](apps/demo-store/public/checkout.js):
+
+```js
+OpenBox.mount(card.querySelector(".checkout"), {
+  publishableKey: "pk_demo_openbox", // safe in the browser
+  sku: card.dataset.sku,             // price comes from your catalog
+  wallet: "passkey",                 // no wallet popup, no gas for the buyer
+  onPaid: ({ ref, explorerUrl }) => { /* mark the order paid */ },
+});
+```
+
+Your server then gets signed webhooks (`X-OpenBox-Signature`) when an order is paid, dispatched, settled or refunded. It's available as a script tag or an npm module.
+
 ---
 
 ## Addresses and proof
