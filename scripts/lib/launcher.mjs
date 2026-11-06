@@ -39,7 +39,7 @@ export const portOpen = (port) => new Promise((r) => {
   s.on("error", () => r(false));
 });
 
-export async function waitPort(port, ms = 60000) {
+export async function waitPort(port, ms = Number(process.env.SERVICE_START_TIMEOUT_MS ?? 60000)) {
   const t = Date.now();
   while (Date.now() - t < ms) { if (await portOpen(port)) return; await new Promise((r) => setTimeout(r, 300)); }
   throw new Error(`port ${port} did not open`);

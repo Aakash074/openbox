@@ -69,7 +69,7 @@ if (live) {
 } else {
   await api("POST", "/v1/world/mock/complete", { requestId: ap.id, persona: "owner", decision: "approve" });
 }
-const done = await waitReq(ap.id, ["refunded", "denied", "expired", "cancelled", "failed", "wrong_person"], 280000, 1500);
+const done = await waitReq(ap.id, ["refunded", "denied", "expired", "cancelled", "failed", "wrong_person"], 1150000, 1500);
 console.log(`   approval: ${done.status}${done.reason ? ` (${done.reason})` : ""}`);
 for (const t of done.timeline ?? []) console.log(`     · ${t.status}${t.note ? `: ${t.note}` : ""}`);
 if (done.status !== "refunded") throw new Error("no refund settled");
