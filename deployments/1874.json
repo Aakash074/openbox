@@ -1,9 +1,9 @@
 {
-  "accountFactory": "0x08C4Fc01A65D36E9d835FD3D306343F5Ab82d4df",
+  "accountFactory": "0xB0636a4424196218E5E0213b555882430365Fa8c",
   "attester": "0xcb25e989F955989e681bA1cC354f4767F4571c00",
   "chainId": 1874,
-  "deliveryCheckout": "0xF2eeBe4d4B7D54ac85932AbaEE9883Edf8F4f19c",
-  "deployBlock": 12206692,
+  "deliveryCheckout": "0xdA0F23301e04fa82947b4d1c6d3E184838F35f51",
+  "deployBlock": 12328169,
   "inspectors": [
     "0xc4D50fE6d4c93BCF0E7B24383eD7CF0dD0ad393a",
     "0x191A3e615db85aA436fA1Ec4bf20143C7950b8f5"
