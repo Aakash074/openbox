@@ -12,7 +12,7 @@ import { startWebhookWorker } from "./webhooks";
 import { createSession, merchantByPk, merchantBySk, merchantById, pay, prepare, sessionView, type Merchant } from "./checkout";
 import { demoFund, depositRefundPool, exportCsv, FINANCE_EVENTS, merchantOrders, orderView, pack, refundPool, scan, tokenInfo, usdtBalance } from "./ops";
 import { createOffer, financingView, fundOffer, lenderAddress, marketplace, merchantFinanceStats } from "./finance";
-import { cancelRequest, checkpointVerifier, createRequest, getRequest, publicView, startWorldPoller, verifier, verifierFor } from "./world/service";
+import { cancelRequest, checkpointVerifier, createRequest, getRequest, publicView, simulateApproval, startWorldPoller, verifier, verifierFor } from "./world/service";
 import { mockComplete, PERSONAS } from "./world/mock";
 import { discoverInspectors, inspect, lastFrame, startKeeper, topics } from "./agent/household";
 import { policySummary } from "./agent/policy";
@@ -72,7 +72,7 @@ app.get("/health", async () => ({ ok: true }));
 app.get("/v1/config", async () => ({
   chainId: cfg.chainId, rpcUrl: cfg.rpcUrl, explorer: cfg.explorer, deliveryCheckout: deployment.deliveryCheckout,
   accountFactory: deployment.accountFactory, token: await tokenInfo(), gaslessMode: cfg.gaslessMode, demoMode: cfg.demoMode,
-  worldMode: verifier.kind, agentPassMode: checkpointVerifier.kind, hederaMode: cfg.agent.hederaMode, inspectionWindowS: Number(cfg.windows.inspection),
+  worldMode: verifier.kind, agentPassMode: checkpointVerifier.kind, simulatedApproval: cfg.demoMode, hederaMode: cfg.agent.hederaMode, inspectionWindowS: Number(cfg.windows.inspection),
   receivableNote: deployment.receivableNote ?? null,
 }));
 
@@ -186,6 +186,9 @@ app.post("/v1/world/mock/complete", async (req) => {
   mockComplete(b.requestId, b.persona, b.decision);
   return { ok: true };
 });
+// Demo-only: finish a partial-refund approval without World App (labelled as simulated; see simulateApproval).
+app.post("/v1/world/requests/:id/simulate-approval", async (req) =>
+  simulateApproval((req.params as { id: string }).id));
 
 
 // ---- household agent -----------------------------------------------------------------------
@@ -300,7 +303,8 @@ app.get("/v1/demo/balances", async (req) => {
   const o = (ref ? getOrderByRef(ref) : db.prepare("SELECT * FROM orders WHERE buyer IS NOT NULL ORDER BY created_at DESC LIMIT 1").get()) as ReturnType<typeof getOrderByRef>;
   const parties: { role: string; address: string | null | undefined }[] = [
     { role: "buyer", address: o?.buyer },
-    { role: "courier", address: o?.courier_payout },
+    // Before dispatch the latest order has no courier yet: show the most recent courier's wallet so the slot isn't blank.
+    { role: "courier", address: o?.courier_payout ?? (db.prepare("SELECT courier_payout FROM orders WHERE courier_payout IS NOT NULL ORDER BY created_at DESC LIMIT 1").get() as { courier_payout?: string } | undefined)?.courier_payout },
     { role: "seller", address: accounts.seller.address },
     { role: "lender", address: lenderAddress() },
   ];

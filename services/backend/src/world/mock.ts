@@ -22,7 +22,7 @@ export function mockComplete(requestId: string, persona: string, decision: "appr
     requestId,
     decision === "approve"
       ? { status: "verified", iss: MOCK_ISS, sub: p.sub, authTime: Math.floor(Date.now() / 1000), acr: "https://world.org/oidc/acr/orb" }
-      : { status: "denied", reason: "access_denied: the person declined in World ID" },
+      : { status: "denied", reason: "access_denied: the person declined (simulated World ID)" },
   );
 }
 

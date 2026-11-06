@@ -11,6 +11,7 @@ import { db, getOrderById, getOrderByRef, now, updateOrder } from "./db";
 import { publish } from "./bus";
 import type { Merchant } from "./checkout";
 import { indexNow } from "./indexer";
+import { SIMULATED_SUB } from "./world/service";
 
 
 /** Seller packs the parcel and records the item's serial. The label is signed after the courier is bound. */
@@ -92,6 +93,7 @@ export function orderView(o: NonNullable<ReturnType<typeof getOrderByRef>>) {
     courierPaid: usdt(o.courier_paid), sellerPaid: usdt(o.seller_paid), buyerRefunded: usdt(o.buyer_refunded),
     awaitingBuyer: !!o.pending_verdict_json,
     inspection: o.last_inspection_json ? JSON.parse(o.last_inspection_json) : null,
+    refundApproval: refundApproval(o.ref),
     receipts: events.map((e) => {
       const data = JSON.parse(e.data_json);
       // With an invoice advance, the seller share is paid to the note contract, which repays the lender.
@@ -100,6 +102,16 @@ export function orderView(o: NonNullable<ReturnType<typeof getOrderByRef>>) {
     }),
     createdAt: o.created_at,
   };
+}
+
+/**
+ * How the partial refund on this order was approved, if one was: a real World ID Agent Pass approval, or the
+ * demo-only simulated fallback (no World ID proof). UIs must label the simulated case as such, never as World ID.
+ */
+function refundApproval(ref: string): { simulated: boolean; txHash: string | null } | null {
+  const r = db.prepare("SELECT world_sub, tx_hash FROM world_requests WHERE purpose = 'approve_refund' AND order_ref = ? AND status = 'refunded' ORDER BY started_at DESC LIMIT 1")
+    .get(ref) as { world_sub: string | null; tx_hash: string | null } | undefined;
+  return r ? { simulated: r.world_sub === SIMULATED_SUB || !!r.world_sub?.startsWith("pairwise-mock-"), txHash: r.tx_hash } : null;
 }
 
 const isNote = (a?: string) => !!note && !!a && a.toLowerCase() === note.address.toLowerCase();

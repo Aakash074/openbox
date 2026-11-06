@@ -63,7 +63,9 @@ function setStatus(id: string, status: string, extra: Partial<WorldRequestRow> =
   db.prepare(`UPDATE world_requests SET ${keys.map((k) => `${k} = ?`).join(", ")} WHERE id = ?`).run(
     ...keys.map((k) => patch[k] as string), id,
   );
-  publish("world.request", { ref: row.order_ref ?? undefined, data: { id, purpose: row.purpose, status, note, ...extra } });
+  // Never broadcast secrets or identifiers: the device code stays server-side and the pairwise World ID subject isn't sent to browsers.
+  const { device_code: _dc, world_sub: _ws, ...visible } = extra;
+  publish("world.request", { ref: row.order_ref ?? undefined, data: { id, purpose: row.purpose, status, note, ...visible, simulated: (extra.world_sub ?? row.world_sub) === SIMULATED_SUB } });
 }
 
 export async function createRequest(
@@ -108,8 +110,32 @@ export function publicView(r: WorldRequestRow) {
     id: r.id, purpose: r.purpose, orderRef: r.order_ref, status: r.status, reason: r.reason,
     userCode: r.user_code, verificationUri: r.verification_uri, expiresAt: r.expires_at,
     txHash: r.tx_hash, mode: verifierFor(r.purpose).kind, courierName: r.enroll_name,
+    simulated: r.world_sub === SIMULATED_SUB,
     timeline: JSON.parse(r.timeline_json),
   };
+}
+
+/**
+ * Demo-only fallback for people evaluating the app without World App (e.g. judges): approves a pending
+ * partial-refund checkpoint WITHOUT a World ID proof. It is labelled as simulated everywhere, never links a
+ * household owner, and is refused unless DEMO_MODE is on. The real Agent Pass path is unchanged.
+ */
+export const SIMULATED_SUB = "simulated-demo-approval";
+export async function simulateApproval(id: string) {
+  if (!cfg.demoMode) throw new Error("simulated approval is only available in demo mode");
+  const r = getRequest(id);
+  if (!r || r.purpose !== "approve_refund") throw new Error("not a refund approval request");
+  if (r.status !== "pending") throw new Error(`request is ${r.status}`);
+  const order = getOrderByRef(r.order_ref!);
+  if (!order?.pending_verdict_json) throw new Error("no partial refund is waiting for approval");
+  setStatus(id, "verified", { world_sub: SIMULATED_SUB }, "Simulated owner approval (demo fallback, no World ID proof)");
+  try {
+    const { txHash } = await acceptPartialRefund(order.ref);
+    setStatus(id, "refunded", { tx_hash: txHash }, "Agent settled the partial refund on Whitechain (simulated approval)");
+  } catch (e) {
+    setStatus(id, "failed", { reason: (e as Error).message }, `Settlement rejected: ${(e as Error).message}`);
+  }
+  return publicView(getRequest(id)!);
 }
 
 
@@ -147,7 +173,8 @@ async function onVerified(r: WorldRequestRow, iss: string, sub: string) {
     updateOrder(order.ref, {
       courier_hash: ch, courier_world_sub: sub, courier_name: r.enroll_name, courier_payout: r.enroll_payout as Address,
     });
-    setStatus(r.id, "verified", { courier_hash: ch, world_sub: sub }, "Courier verified with World ID");
+    setStatus(r.id, "verified", { courier_hash: ch, world_sub: sub },
+      verifier.kind === "mock" ? "Courier verified (simulated World ID, demo identity)" : "Courier verified with World ID");
     const d = { orderId: order.order_id, courierHash: ch, payout: r.enroll_payout as Address, deadline: BigInt(now() + 300) };
     try {
       const sig = await accounts.attester.signTypedData({ domain: checkoutDomain, types: dispatchAttestationTypes, primaryType: "DispatchAttestation", message: d });
