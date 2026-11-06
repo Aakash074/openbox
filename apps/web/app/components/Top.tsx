@@ -37,7 +37,7 @@ export function Top({ account = "Northwind Gadgets", variant = "app" }: { accoun
         <Brand />
         <nav className="nav" aria-label="Main">{links}</nav>
         <div className="top-right">
-          <Badge tone="warning" title="Whitechain testnet · World ID staging · Hedera testnet">Testnet</Badge>
+          <Badge tone="neutral" title="Whitechain testnet · World ID · Hedera testnet">Testnet</Badge>
           <span className="account" title="Signed in as this merchant"><span className="avatar">{account.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase()}</span>{account}</span>
           <button type="button" className="btn ghost sm menu-btn" aria-expanded={open} aria-controls="mobile-nav" aria-label="Menu" onClick={() => setOpen((o) => !o)}>
             <Icon name={open ? "x" : "menu"} />
@@ -49,11 +49,12 @@ export function Top({ account = "Northwind Gadgets", variant = "app" }: { accoun
   );
 }
 
-/** Buyer/courier header: store or product context on the left, "Secured by OpenBox" on the right. No operator nav. */
-export function MiniTop({ left }: { left: ReactNode }) {
+/** Buyer/courier header: store or product context on the left, "Secured by OpenBox" on the right. No operator nav.
+ *  `width`: the page's max-width in px (same padding), so the header lines up with the content (default 880). */
+export function MiniTop({ left, width }: { left: ReactNode; width?: number }) {
   return (
     <header className="mini-top">
-      <div className="mini-top-in">
+      <div className="mini-top-in" style={width ? { maxWidth: width } : undefined}>
         <div className="grow truncate">{left}</div>
         <span className="secured"><Icon name="lock" /> Secured by <Logo /><b>OpenBox</b></span>
       </div>
