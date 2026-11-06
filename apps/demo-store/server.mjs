@@ -2,7 +2,7 @@
 // and receives OpenBox webhooks (verifying the HMAC signature) to show them live.
 import { createServer } from "node:http";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { resolve, extname } from "node:path";
 
@@ -46,8 +46,9 @@ createServer((req, res) => {
     res.writeHead(200, { "content-type": "text/javascript" });
     return res.end(readFileSync(sdk));
   }
-  const file = resolve(here, "public", req.url === "/" ? "index.html" : req.url.slice(1).split("?")[0]);
-  if (!file.startsWith(resolve(here, "public")) || !existsSync(file)) return res.writeHead(404).end();
+  const path = req.url.split("?")[0];
+  const file = resolve(here, "public", path === "/" ? "index.html" : path.slice(1));
+  if (!file.startsWith(resolve(here, "public")) || !existsSync(file) || !statSync(file).isFile()) return res.writeHead(404).end();
   const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css" };
   let out = readFileSync(file);
   if (extname(file) === ".html") out = Buffer.from(out.toString().replace("__API__", API).replace("__WEB__", WEB));
