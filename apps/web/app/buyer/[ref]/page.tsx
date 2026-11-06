@@ -1,11 +1,12 @@
 "use client";
-import { use, useState } from "react";
+import { use } from "react";
 import { MiniTop } from "../../components/Top";
 import {
   Callout, Card, EmptyState, Icon, InspectionList, Money, ReceiptList, Skeleton, StatusBadge, Stepper, fmtAmount, fmtRelDay,
   type StepState,
 } from "../../components/ui";
 import { api, useEvents, usePoll } from "../../lib/api";
+import { RefundApproval } from "../../components/approval";
 
 const PK = process.env.NEXT_PUBLIC_PUBLISHABLE_KEY ?? "pk_demo_openbox";
 const STORE = process.env.NEXT_PUBLIC_STORE_URL;
@@ -30,6 +31,8 @@ function buildSteps(o: any): Step[] {
       { label: returned ? "Returned to seller" : "Return in progress", state: returned ? "done" : "current", time: at("ReturnToSender") }];
   }
   if (o.awaitingBuyer) return [...base, { label: "Damage found", state: "warn", time: at("HandedOver") }, { label: "Your decision", state: "current" }];
+  if (o.outcome === "timeout" && o.inspection?.outcome === "damaged")
+    return [...base, { label: "Damage found", state: "warn", time: at("HandedOver") }, { label: "Settled · not accepted", state: "done", time: at("Settled") }];
   if (o.outcome === "damaged") return [...base, { label: "Damage found", state: "warn", time: at("HandedOver") }, { label: "Settled · partial refund", state: "done", time: at("Settled") }];
   return [...base,
     { label: "At your door", state: o.outcome ? "done" : st(3), time: at("HandedOver") },
@@ -41,12 +44,6 @@ export default function Buyer({ params }: { params: Promise<{ ref: string }> }) 
   const tick = useEvents(ref);
   const [o, reload, err] = usePoll(() => api("GET", `/v1/orders/${ref}`), [ref, tick]);
   const [cat] = usePoll(() => api("GET", `/v1/catalog/${PK}`), []);
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<string>();
-  const accept = async () => {
-    setBusy(true);
-    try { await api("POST", `/v1/orders/${ref}/accept-partial-refund`); } catch (e) { setMsg((e as Error).message); } finally { setBusy(false); reload(); }
-  };
   const store = cat?.merchant ?? "Your order";
   const notFound = !o && err && /not found|404/i.test(err);
   const placed = o?.createdAt ?? o?.receipts?.[0]?.at;
@@ -86,15 +83,17 @@ export default function Buyer({ params }: { params: Promise<{ ref: string }> }) 
 
             <div className="card card-b"><Stepper steps={buildSteps(o)} label="Order progress" /></div>
 
-            {msg && <Callout tone="danger" title="That didn't go through">{msg}</Callout>}
             {["paid", "packed"].includes(o.status) && <Callout tone="info" icon="lock" title="Payment received and held">Your payment is held until the parcel is checked at your door. If it isn't what you ordered, you get your money back.</Callout>}
             {o.status === "dispatched" && <Callout tone="info" icon="truck" title={`${o.courier ?? "Your courier"} is on the way`}>When the parcel arrives, open it in front of your doorbell camera. The seller is paid only if it&apos;s what you ordered.</Callout>}
             {o.status === "handed_over" && !o.awaitingBuyer && !o.outcome && <Callout tone="info" icon="camera" title="Open the box at your door">Hold the item&apos;s label up to the doorbell camera so it can be checked.</Callout>}
             {o.awaitingBuyer && (
-              <Callout tone="warning" title="Damage found at delivery"
-                action={<button type="button" className="btn primary" disabled={busy} onClick={accept}>{busy && <Icon name="loader" className="spin" />} Accept {o.inspection.refundBps / 100}% partial refund</button>}>
-                The inspector found damage. You can keep the item and get part of your payment back.
-              </Callout>
+              <div className="stack-12">
+                <Callout tone="warning" title="Damage found at delivery">
+                  The inspector found damage. You can keep the item and get {o.inspection?.refundBps ? `${o.inspection.refundBps / 100}%` : "part"} of your payment back.
+                </Callout>
+                <RefundApproval orderRef={o.ref} refundPct={o.inspection?.refundBps ? o.inspection.refundBps / 100 : undefined}
+                  deadline={o.decisionDeadline} returnWindowS={o.returnWindowS} onSettled={reload} />
+              </div>
             )}
             {o.outcome === "match" && <Callout tone="success" title="Delivered and verified">The parcel matched your order, so the seller has been paid. Enjoy!</Callout>}
             {o.outcome === "mismatch" && (
@@ -105,6 +104,14 @@ export default function Buyer({ params }: { params: Promise<{ ref: string }> }) 
             {o.outcome === "damaged" && !o.awaitingBuyer && (
               <Callout tone="warning" title="Damage found at delivery">
                 You received a {o.inspection?.refundBps ? `${o.inspection.refundBps / 100}% ` : ""}partial refund (<b><Money v={o.buyerRefunded} /></b>); the rest went to the seller.
+              </Callout>
+            )}
+            {o.outcome === "timeout" && o.inspection?.outcome === "damaged" && (
+              <Callout tone="neutral" icon="clock" title="Partial refund not accepted in time">
+                The seller was paid in full and you kept the item.{" "}
+                {o.returnDeadline && o.returnDeadline > Date.now() / 1000
+                  ? <>You can still return it for a refund of the item price until <b>{fmtRelDay(o.returnDeadline)}</b>: contact {store === "Your order" ? "the store" : store} to arrange it, and the parcel is checked against its serial when it&apos;s handed back.</>
+                  : <>The return window for this order has closed.</>}
               </Callout>
             )}
             {o.status === "returned" && <Callout tone="success" title="Return received">The seller confirmed the returned item. Refunded <Money v={o.buyerRefunded} />.</Callout>}

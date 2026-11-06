@@ -1,13 +1,13 @@
 "use client";
-import { Fragment, useEffect, useState } from "react";
-import QRCode from "qrcode";
+import { Fragment, useState } from "react";
 import { Top } from "../components/Top";
 import {
   Badge, Callout, Card, CodeBlock, CopyButton, EmptyState, ExtLink, Field, Hash, Icon, KpiTile, Money, PageHeader,
-  InspectionList, ReceiptList, Skeleton, hashscan, fmtGas, SkeletonRows, StatusBadge, Timestamp, fmtAmount, Dialog, Drawer,
+  InspectionList, ReceiptList, Skeleton, hashscan, fmtGas, SkeletonRows, StatusBadge, Timestamp, fmtAmount, Dialog, Drawer, QR,
 } from "../components/ui";
 import { api, merchant, useEvents, usePoll } from "../lib/api";
 import { AdvanceBadge, AdvanceCard } from "../components/finance";
+import { APPROVAL_LABEL, APPROVAL_OPEN, approvalTone } from "../components/approval";
 
 const STICKERS = ["SN-AX1-7731-0042", "SN-PBP-5520-0007", "SN-LT11-3304-0019", "SN-AX1-7731-1001"];
 const DEMO_COURIER = process.env.NEXT_PUBLIC_DEMO_COURIER ?? "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955";
@@ -51,12 +51,6 @@ const AUDIT_LABEL: Record<string, [string, "success" | "warning" | "info" | "neu
 };
 type Tab = "overview" | "inspections" | "developers";
 
-function QR({ text, size = 160 }: { text: string; size?: number }) {
-  const [src, setSrc] = useState<string>();
-  useEffect(() => { QRCode.toDataURL(text, { margin: 1, width: size }).then(setSrc); }, [text, size]);
-  return src ? <img src={src} width={size} height={size} alt="QR code" /> : <Skeleton w={size} h={size} />;
-}
-
 export default function Merchant() {
   const tick = useEvents();
   const [stats, reloadStats, statsErr] = usePoll(() => merchant("GET", "stats"), [tick]);
@@ -75,7 +69,10 @@ export default function Merchant() {
   const [snippet, setSnippet] = useState("HTML");
 
   useEvents(undefined, (e) => {
-    if (e.type === "world.request" && e.ref) setWorldReq((w) => ({ ...w, [e.ref!]: { ...(w[e.ref!] ?? {}), status: e.data?.status, note: e.data?.note } }));
+    if (e.type === "world.request" && e.ref) {
+      const key = e.data?.purpose === "approve_refund" ? `${e.ref}:approval` : e.ref!; // keep courier checks and refund approvals apart
+      setWorldReq((w) => ({ ...w, [key]: { ...(w[key] ?? {}), purpose: e.data?.purpose, status: e.data?.status, note: e.data?.note, at: e.at } }));
+    }
   });
 
   const act = async (key: string, fn: () => Promise<unknown>) => {
@@ -167,7 +164,7 @@ export default function Merchant() {
                           <td className="num">{o.advance && o.advance.status !== "offered"
                             ? <><Money v={o.advance.received} cur={null} strong /><div className="cell-sub">{o.advance.status === "funded" ? "Advanced" : "Incl. advance"}</div></>
                             : ["settled", "returned", "returned_to_seller"].includes(o.status) || o.outcome ? <Money v={o.sellerPaid} cur={null} strong /> : <span className="muted" title="Released when delivery is verified">Held</span>}</td>
-                          <td onClick={(e) => e.stopPropagation()}><NextStep o={o} req={worldReq[o.ref]} onOpen={() => setOpen(o.ref)} /></td>
+                          <td onClick={(e) => e.stopPropagation()}><NextStep o={o} req={worldReq[o.ref]} approval={worldReq[`${o.ref}:approval`]} onOpen={() => setOpen(o.ref)} /></td>
                         </tr>
                       </Fragment>
                     ))}
@@ -184,7 +181,7 @@ export default function Merchant() {
                       <div className="row between mt-8"><span className="small text-2 truncate grow">{o.product}</span><span className="xs muted"><Timestamp ts={o.createdAt} /></span></div>
                       <div className="badges mt-8"><StatusBadge s={o.awaitingBuyer ? "awaiting_buyer" : o.status} />{o.outcome && <StatusBadge s={o.outcome} />}<AdvanceBadge a={o.advance} /></div>
                     </button>
-                    {["paid", "packed", "dispatched", "returning"].includes(o.status) && <div className="list-actions"><NextStep o={o} req={worldReq[o.ref]} onOpen={() => setOpen(o.ref)} /></div>}
+                    {["paid", "packed", "dispatched", "returning"].includes(o.status) && <div className="list-actions"><NextStep o={o} req={worldReq[o.ref]} approval={worldReq[`${o.ref}:approval`]} onOpen={() => setOpen(o.ref)} /></div>}
                   </li>
                 ))}
               </ul>
@@ -404,6 +401,34 @@ export default function Merchant() {
 
           {(current.advance || ["paid", "packed", "dispatched", "handed_over"].includes(current.status)) && <AdvanceCard refId={current.ref} tick={tick} />}
 
+          {(current.awaitingBuyer || worldReq[`${current.ref}:approval`] || (current.outcome === "timeout" && current.inspection?.outcome === "damaged")) && (() => {
+            const a = worldReq[`${current.ref}:approval`];
+            const deadline = current.decisionDeadline as number | null;
+            if (current.outcome === "timeout") {
+              return (
+                <section>
+                  <div className="row between" style={{ marginBottom: 10 }}><h3 style={{ margin: 0 }}>Buyer&apos;s decision</h3><Badge tone="brand" dot={false}>World ID Agent Pass</Badge></div>
+                  <Callout tone="neutral" icon="clock" title="Buyer didn't accept the partial refund; paid in full">
+                    The decision window closed, so the payout was released to you. The buyer kept the item and can still return it within the return window.
+                  </Callout>
+                </section>
+              );
+            }
+            return (
+              <section>
+                <div className="row between" style={{ marginBottom: 10 }}><h3 style={{ margin: 0 }}>Buyer&apos;s decision</h3><Badge tone="brand" dot={false}>World ID Agent Pass</Badge></div>
+                {a
+                  ? <Callout tone={approvalTone(a.status) as "success" | "danger" | "neutral" | "info"} title={APPROVAL_LABEL[a.status] ?? a.status}>
+                      {APPROVAL_OPEN.includes(a.status) ? "The buyer's OpenBox agent settles the partial refund only after the household owner approves with World ID." : a.at ? <>Updated <Timestamp ts={a.at} mode="time" />.</> : null}
+                    </Callout>
+                  : <div className="small text-2">Damage was found at the door. The buyer can accept a {current.inspection?.refundBps ? `${current.inspection.refundBps / 100}% ` : ""}partial refund; their agent settles it after a World ID approval.</div>}
+                {current.awaitingBuyer && deadline && (
+                  <div className="small text-2 mt-8 row"><Icon name="clock" /><span>Buyer has until <Timestamp ts={deadline} mode="time" /> to accept. If they don&apos;t, you&apos;re paid in full.</span></div>
+                )}
+              </section>
+            );
+          })()}
+
           <section>
             <h3>Payment</h3>
             <ul className="lines">
@@ -470,13 +495,13 @@ export default function Merchant() {
   );
 }
 
-function NextStep({ o, req, onOpen }: { o: any; req?: any; onOpen: () => void }) {
+function NextStep({ o, req, approval, onOpen }: { o: any; req?: any; approval?: any; onOpen: () => void }) {
   const b = (label: string, primary = true) => <button type="button" className={`btn sm ${primary ? "primary" : ""}`} onClick={onOpen}>{label}</button>;
   if (o.status === "paid") return b("Pack order");
   if (o.status === "packed") return req?.verificationUri ? b("Courier check…", false) : b("Assign courier");
   if (o.status === "dispatched") return b("View label", false);
   if (o.status === "returning") return b("Mark received");
-  if (o.awaitingBuyer) return <span className="small muted">Buyer deciding</span>;
+  if (o.awaitingBuyer) return <span className="small muted">{approval && APPROVAL_OPEN.includes(approval.status) ? "Awaiting household approval" : "Buyer deciding"}</span>;
   if (o.status === "handed_over") return <span className="small muted">Inspecting</span>;
   return <button type="button" className="btn ghost sm" onClick={onOpen}>View</button>;
 }

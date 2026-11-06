@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import QRCode from "qrcode";
 import { api, isLocal, useEvents } from "../lib/api";
 
 /* ─── icons (inline, lucide-style 24px stroke paths) ────────────────────────────────────── */
@@ -99,6 +100,13 @@ export function Timestamp({ ts, mode = "rel" }: { ts?: number | string | null; m
   return <time className="tnum nowrap" dateTime={d.toISOString()} title={fmtDate(ts)}>{text}</time>;
 }
 
+/** QR code image for a URL or payload (skeleton while it renders). */
+export function QR({ text, size = 160, alt = "QR code" }: { text: string; size?: number; alt?: string }) {
+  const [src, setSrc] = useState<string>();
+  useEffect(() => { QRCode.toDataURL(text, { margin: 1, width: size }).then(setSrc).catch(() => setSrc(undefined)); }, [text, size]);
+  return src ? <img src={src} width={size} height={size} alt={alt} /> : <Skeleton w={size} h={size} />;
+}
+
 /* ─── hash / id ─────────────────────────────────────────────────────────────────────────── */
 export const middle = (s: string, head = 6, tail = 4) => (s.length <= head + tail + 1 ? s : `${s.slice(0, head)}…${s.slice(-tail)}`);
 
@@ -164,7 +172,8 @@ const STATUS: Record<string, [string, Tone]> = {
   // world checks
   pending: ["Pending", "info"], creating: ["Starting", "info"], validating: ["Validating", "info"],
   verified: ["Verified", "success"], denied: ["Declined", "danger"], wrong_courier: ["Wrong courier", "danger"],
-  expired: ["Expired", "neutral"], failed: ["Failed", "danger"],
+  expired: ["Expired", "neutral"], failed: ["Failed", "danger"], cancelled_check: ["Cancelled", "neutral"],
+  wrong_person: ["Not the household owner", "danger"], refunded: ["Refund settled", "success"], requested: ["Requested", "neutral"],
   low: ["Low balance", "warning"], ok: ["Healthy", "success"],
 };
 export const statusLabel = (s?: string | null) => (s ? STATUS[s]?.[0] ?? s.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()) : "—");

@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { MiniTop } from "../components/Top";
 import { Badge, Callout, EmptyState, Icon, Skeleton, StatusBadge, Stepper, Timestamp, type StepState } from "../components/ui";
 import { api } from "../lib/api";
+import { APPROVAL_LABEL, APPROVAL_OPEN, ApprovalTimeline, DemoApprover, approvalTone } from "../components/approval";
 
 const PERSONAS: { id: string; name: string; note: string; color: string }[] = [
   { id: "alice", name: "Alice", note: "Assigned courier", color: "#0F766E" },
@@ -41,6 +42,7 @@ function Courier() {
     setBusy(persona + decision); setMsg(undefined);
     try { await api("POST", "/v1/world/mock/complete", { requestId: id, persona, decision }); } catch (e) { setMsg((e as Error).message); } finally { setBusy(undefined); reload(); }
   };
+  if (r?.purpose === "approve_refund") return <HouseholdApproval r={r} reload={reload} />;
   const isDispatch = r?.purpose === "dispatch";
   const steps: { label: string; state: StepState }[] = [
     { label: isDispatch ? "Assigned" : "At the door", state: "done" },
@@ -130,6 +132,43 @@ function Courier() {
             )}
           </div>
         )}
+      </main>
+    </>
+  );
+}
+
+/** Phone page for the household owner's World ID Agent Pass approval (mock mode lands here from the QR). */
+function HouseholdApproval({ r, reload }: { r: any; reload: () => void }) {
+  const open = APPROVAL_OPEN.includes(r.status);
+  const tone = approvalTone(r.status) as "success" | "danger" | "neutral" | "info";
+  return (
+    <>
+      <MiniTop left={<span className="row" style={{ gap: 8, flexWrap: "nowrap" }}><Icon name="shield" /><span className="store nowrap">Approval <span className="muted" style={{ fontWeight: 400 }}>· <span className="mono">{r.orderRef}</span></span></span></span>} />
+      <main className="page" style={{ maxWidth: 480, fontSize: 16 }}>
+        <div className="stack-24">
+          <div>
+            <Badge tone="brand" dot={false}><Icon name="shield" /> World ID Agent Pass</Badge>
+            <h1 className="mt-12">Approve a refund for your agent</h1>
+            <div className="text-2 small mt-8">
+              Your OpenBox agent wants to accept a partial refund for damaged order <span className="mono">{r.orderRef}</span> and let you keep the item.
+              Refunds the agent accepts for you need a fresh World ID check, so nobody else can act on your behalf.
+            </div>
+          </div>
+          {open && (r.mode === "mock"
+            ? <DemoApprover requestId={r.id} onDone={reload} />
+            : (
+              <div className="card card-b stack-16">
+                {r.userCode && <div><div className="xs muted">Your code</div><div className="mono strong" style={{ fontSize: 28, letterSpacing: ".08em" }}>{r.userCode}</div></div>}
+                <a className="btn primary lg block" href={r.verificationUri} target="_blank" rel="noreferrer"><Icon name="shield" /> Open World App</a>
+              </div>
+            ))}
+          {!open && (
+            <Callout tone={tone === "info" ? "success" : tone} title={APPROVAL_LABEL[r.status] ?? r.status}>
+              {r.status === "refunded" || r.status === "verified" ? "You can close this page." : "Nothing was refunded. If the refund isn't accepted in time, the seller is paid in full and the buyer keeps the item, with the usual return window."}
+            </Callout>
+          )}
+          <div className="card card-b"><h3 style={{ marginBottom: 12 }}>Activity</h3><ApprovalTimeline r={r} /></div>
+        </div>
       </main>
     </>
   );

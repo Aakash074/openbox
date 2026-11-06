@@ -3,7 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import jsQR from "jsqr";
 import QRCode from "qrcode";
 import { Badge, Brand, Callout, EmptyState, ExtLink, Hash, Icon, Money, StatusBadge, Stepper, fmtTime, hashscan } from "../components/ui";
-import { api, useEvents, type ObEvent } from "../lib/api";
+import { api, useEvents, usePoll, type ObEvent } from "../lib/api";
+import { APPROVAL_LABEL, RefundApproval } from "../components/approval";
 
 type Step = "scan" | "courier" | "open" | "verdict";
 const STEPS: [Step, string][] = [["scan", "Scan parcel"], ["courier", "Courier check"], ["open", "Open the box"], ["verdict", "Result"]];
@@ -28,6 +29,8 @@ export default function Kiosk() {
   const lastQr = useRef<string>("");
   const scanning = useRef(true);
 
+  // Order view while the buyer decides on a partial refund (decision deadline, return window).
+  const [ord] = usePoll<any>(() => (verdict?.action === "awaiting_buyer" && scan?.ref ? api("GET", `/v1/orders/${scan.ref}`) : Promise.resolve(undefined)), [verdict?.action, scan?.ref]);
   const note = (s: string) => setLog((l) => [{ at: Date.now(), text: s }, ...l].slice(0, 14));
 
   // camera
@@ -88,6 +91,7 @@ export default function Kiosk() {
 
   // live events for this parcel
   useEvents(scan?.ref, (e: ObEvent) => {
+    if (e.type === "world.request" && e.data?.purpose === "approve_refund") note(APPROVAL_LABEL[e.data.status] ?? `Approval ${e.data.status}`);
     if (e.type === "world.request" && e.data?.id === req?.id) {
       const s = e.data.status;
       if (e.data.note) note(e.data.note);
@@ -135,14 +139,6 @@ export default function Kiosk() {
     inspect(btoa(`MOCK:${JSON.stringify(payload)}`));
   };
 
-  const accept = async () => {
-    setBusy(true);
-    try {
-      const r = await api("POST", `/v1/orders/${scan.ref}/accept-partial-refund`);
-      setVerdict((v: any) => ({ ...v, action: "settled", txHash: r.txHash, explorerUrl: r.explorerUrl }));
-      setBanner({ kind: "success", title: "Partial refund sent", text: "The rest went to the seller and the courier has been paid." });
-    } catch (e) { setBanner({ kind: "danger", title: "Refund didn't go through", text: (e as Error).message }); } finally { setBusy(false); }
-  };
 
   const hint = step === "scan" ? "Courier: show the parcel QR" : step === "courier" ? "Courier: verify with World ID on your phone" : step === "open" ? "Open the box and hold the item's label up" : "Done";
   const idx = STEPS.findIndex(([s]) => s === step);
@@ -238,6 +234,11 @@ export default function Kiosk() {
               <section className="card">
                 <div className="card-h"><h2>Result</h2><StatusBadge s={verdict.result.outcome} /></div>
                 <div className="card-b stack-16">
+                  {verdict.action === "awaiting_buyer" && (
+                    <RefundApproval variant="kiosk" orderRef={scan.ref} refundPct={verdict.result.refundBps / 100}
+                      deadline={ord?.decisionDeadline} returnWindowS={ord?.returnWindowS}
+                      onSettled={() => { setVerdict((v: any) => ({ ...v, action: "settled" })); setBanner({ kind: "success", title: "Partial refund approved and settled", text: "The household owner approved with World ID. The rest went to the seller and the courier has been paid." }); }} />
+                  )}
                   <dl className="dl">
                     <dt>Serial read</dt><dd><span className="mono">{verdict.result.serialRead || "Not readable"}</span></dd>
                     <dt>Damage</dt><dd>{verdict.result.damage === "none" ? "None found" : verdict.result.damage}</dd>
@@ -250,9 +251,6 @@ export default function Kiosk() {
                     {verdict.txHash && <><dt>Settlement</dt><dd><Hash value={verdict.txHash} href={verdict.explorerUrl} /></dd></>}
                   </dl>
                   <div className="row">
-                    {verdict.action === "awaiting_buyer" && (
-                      <button type="button" className="btn primary lg" disabled={busy} onClick={accept}>Accept {verdict.result.refundBps / 100}% partial refund</button>
-                    )}
                     <button type="button" className="btn lg" onClick={reset}>Next parcel <Icon name="arrow-right" /></button>
                   </div>
                 </div>
