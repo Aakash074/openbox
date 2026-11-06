@@ -51,19 +51,23 @@ export async function waitPort(port, ms = Number(process.env.SERVICE_START_TIMEO
  */
 export async function startServices(run, env) {
   spawnSync("node", ["packages/shared/scripts/gen-abi.mjs"], { cwd: root, stdio: "ignore" });
-  const tsx = resolve(root, "node_modules/.bin/tsx");
-  run("facilitator", tsx, ["services/facilitator/src/server.ts"]);
+  // One node process per service with the tsx loader in-process (the tsx CLI would add a wrapper process each).
+  // SERVICE_HEAP_MB caps each service's V8 heap on small hosts.
+  const heap = env.SERVICE_HEAP_MB ? [`--max-old-space-size=${env.SERVICE_HEAP_MB}`] : [];
+  const ts = (file) => [...heap, "--import", "tsx", file];
+  const tsx = process.execPath;
+  run("facilitator", tsx, ts("services/facilitator/src/server.ts"));
   await waitPort(Number(env.FACILITATOR_PORT ?? 4200));
-  run("inspector-A", tsx, ["services/inspector/src/server.ts"], {
+  run("inspector-A", tsx, ts("services/inspector/src/server.ts"), {
     INSPECTOR_NAME: "Northstar Inspect (budget)", INSPECTOR_PORT: "4100", INSPECTOR_PUBLIC_URL: env.INSPECTOR_PUBLIC_URL ?? "http://localhost:4100",
   });
-  run("inspector-B", tsx, ["services/inspector/src/server.ts"], {
+  run("inspector-B", tsx, ts("services/inspector/src/server.ts"), {
     INSPECTOR_NAME: "Precision Vision Labs (premium)", INSPECTOR_PORT: "4101", INSPECTOR_PUBLIC_URL: env.INSPECTOR2_PUBLIC_URL ?? "http://localhost:4101",
     INSPECTOR_PK: env.INSPECTOR2_PK, INSPECTOR_PRICE_USD: env.INSPECTOR2_PRICE_USD ?? "0.30", INSPECTOR_PAY_TO: env.INSPECTOR2_PAY_TO ?? "0.0.9003",
     HEDERA_INSPECTOR_ACCOUNT_ID: env.HEDERA_INSPECTOR2_ACCOUNT_ID, HEDERA_INSPECTOR_PRIVATE_KEY: env.HEDERA_INSPECTOR2_PRIVATE_KEY,
   });
   await Promise.all([waitPort(4100), waitPort(4101)]);
-  run("backend", tsx, ["services/backend/src/server.ts"], { LOG_LEVEL: "warn" });
+  run("backend", tsx, ts("services/backend/src/server.ts"), { LOG_LEVEL: "warn" });
   await waitPort(Number(env.BACKEND_PORT ?? 4000));
 }
 
