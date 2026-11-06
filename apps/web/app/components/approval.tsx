@@ -106,12 +106,12 @@ export function DemoApprover({ requestId, onDone, dark }: { requestId: string; o
 }
 
 /** Current unix time, ticking every second (deadlines). */
-function useNow() {
+export function useNow() {
   const [t, setT] = useState(() => Math.floor(Date.now() / 1000));
   useEffect(() => { const i = setInterval(() => setT(Math.floor(Date.now() / 1000)), 1000); return () => clearInterval(i); }, []);
   return t;
 }
-const hhmm = (ts: number) => { const d = new Date(ts * 1000); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+export const hhmm = (ts: number) => { const d = new Date(ts * 1000); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
 /** "in 4 min" / "in 2 h" / "in 3 days". */
 export const inText = (s: number) => s < 60 ? "in under a minute" : s < 3600 ? `in ${Math.round(s / 60)} min` : s < 86400 * 2 ? `in ${Math.round(s / 3600)} h` : `in ${Math.round(s / 86400)} days`;
 const daysText = (s?: number | null) => { const d = Math.round(Number(s ?? 7 * 86400) / 86400); return d >= 1 ? `${d} day${d === 1 ? "" : "s"}` : `${Math.max(1, Math.round(Number(s) / 60))} min`; };
@@ -232,12 +232,15 @@ export function RefundApproval({ orderRef, refundPct, deadline, returnWindowS, v
           <div className="small text-2" title="World ID Orb or Selfie Check">Scan with your phone and confirm it&apos;s you with World ID.</div>
           {r.userCode && <div><div className="xs muted">Your code</div><div className="mono strong" style={{ fontSize: kiosk ? 26 : 30, letterSpacing: ".08em" }}>{r.userCode}</div></div>}
           <a className={`btn ${kiosk ? "" : "primary"}`} href={r.verificationUri} target="_blank" rel="noreferrer"><Icon name="shield" /> {r.mode === "mock" ? "Open approval page" : "Open World App"}</a>
-          <div className="xs muted row"><Icon name="clock" /> <span>{r.status === "validating" ? "Checking your approval…" : <>This check expires in <Countdown until={r.expiresAt} /></>}</span></div>
+          <div className="xs muted row"><Icon name="clock" /> <span>{r.status === "validating" ? "Checking your approval…"
+            : deadline && deadline < r.expiresAt
+              ? <>Decide by {hhmm(deadline)} (<Countdown until={deadline} /> left). After that the seller is paid in full.</>
+              : <>This check expires in <Countdown until={r.expiresAt} /></>}</span></div>
         </div>
       </div>
       {r.mode === "mock" && <DemoApprover requestId={r.id} onDone={reload} dark={kiosk} />}
       <div className="row between">
-        <span className="xs muted">{deadline && !past ? <>Nothing is refunded until you approve. Decide by {hhmm(deadline)} ({inText(left!)}); after that the seller is paid in full.</> : "Nothing is refunded until you approve."}</span>
+        <span className="xs muted">Nothing is refunded until you approve.</span>
         <button type="button" className="btn ghost sm" disabled={busy} onClick={cancel}>Cancel</button>
       </div>
       {msg && <Callout tone="danger" title="That didn't go through.">{msg}</Callout>}

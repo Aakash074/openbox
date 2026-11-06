@@ -3,7 +3,7 @@ import { Fragment, useState } from "react";
 import { Top } from "../components/Top";
 import {
   Badge, Callout, Card, CodeBlock, CopyButton, EmptyState, ExtLink, Field, Hash, Icon, KpiTile, Money, PageHeader,
-  InspectionList, ReceiptList, Skeleton, hashscan, fmtGas, SkeletonRows, StatusBadge, Timestamp, fmtAmount, Dialog, Drawer, QR,
+  InspectionList, ReceiptList, Skeleton, hashscan, fmtGas, SkeletonRows, StatusBadge, Timestamp, fmtAmount, Dialog, Drawer, QR, outcomeKey,
 } from "../components/ui";
 import { api, merchant, useEvents, usePoll } from "../lib/api";
 import { AdvanceBadge, AdvanceCard } from "../components/finance";
@@ -157,7 +157,7 @@ export default function Merchant() {
                           <td className="nowrap"><span className="strong mono" style={{ fontSize: 13 }}>{o.ref}</span><div className="cell-sub"><Timestamp ts={o.createdAt} /></div></td>
                           <td style={{ minWidth: 160 }}>{o.product}{o.serial && <div className="cell-sub mono">{o.serial}</div>}</td>
                           <td><div className="badges"><StatusBadge s={o.awaitingBuyer ? "awaiting_buyer" : o.status} /><AdvanceBadge a={o.advance} /></div></td>
-                          <td>{o.outcome ? <StatusBadge s={o.outcome} /> : <span className="muted">—</span>}</td>
+                          <td>{o.outcome ? <StatusBadge s={outcomeKey(o)} /> : <span className="muted">—</span>}</td>
                           <td className="num"><Money v={o.amount} cur={null} /></td>
                           <td className="num"><Money v={o.courierFee} cur={null} /></td>
                           <td className="num">{Number(o.buyerRefunded) > 0 ? <Money v={o.buyerRefunded} cur={null} /> : <span className="muted">—</span>}</td>
@@ -179,7 +179,7 @@ export default function Merchant() {
                     <button type="button" className="list-btn" onClick={() => setOpen(o.ref)} aria-haspopup="dialog">
                       <div className="row between"><span className="strong mono" style={{ fontSize: 13 }}>{o.ref}</span><Money v={o.amount} strong /></div>
                       <div className="row between mt-8"><span className="small text-2 truncate grow">{o.product}</span><span className="xs muted"><Timestamp ts={o.createdAt} /></span></div>
-                      <div className="badges mt-8"><StatusBadge s={o.awaitingBuyer ? "awaiting_buyer" : o.status} />{o.outcome && <StatusBadge s={o.outcome} />}<AdvanceBadge a={o.advance} /></div>
+                      <div className="badges mt-8"><StatusBadge s={o.awaitingBuyer ? "awaiting_buyer" : o.status} />{o.outcome && <StatusBadge s={outcomeKey(o)} />}<AdvanceBadge a={o.advance} /></div>
                     </button>
                     {["paid", "packed", "dispatched", "returning"].includes(o.status) && <div className="list-actions"><NextStep o={o} req={worldReq[o.ref]} approval={worldReq[`${o.ref}:approval`]} onOpen={() => setOpen(o.ref)} /></div>}
                   </li>
@@ -343,7 +343,7 @@ export default function Merchant() {
 
       {current && (
         <Drawer onClose={() => setOpen(undefined)} title={<span className="mono">{current.ref}</span>}
-          sub={<div className="badges mt-8"><StatusBadge s={current.awaitingBuyer ? "awaiting_buyer" : current.status} />{current.outcome && <StatusBadge s={current.outcome} />}<AdvanceBadge a={current.advance} /></div>}>
+          sub={<div className="badges mt-8"><StatusBadge s={current.awaitingBuyer ? "awaiting_buyer" : current.status} />{current.outcome && <StatusBadge s={outcomeKey(current)} />}<AdvanceBadge a={current.advance} /></div>}>
           <section>
             <div className="strong" style={{ fontSize: 16 }}>{current.product}</div>
             <div className="small muted">Placed <Timestamp ts={current.createdAt} mode="abs" /></div>

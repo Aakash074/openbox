@@ -164,6 +164,7 @@ const STATUS: Record<string, [string, Tone]> = {
   returned_to_seller: ["Returned", "neutral"],
   cancelled: ["Cancelled", "neutral"],
   timeout: ["Timed out", "warning"],
+  damaged_not_accepted: ["Damaged · not accepted", "neutral"],
   awaiting_buyer: ["Awaiting buyer", "warning"],
   // inspection outcomes
   match: ["Verified match", "success"],
@@ -176,6 +177,10 @@ const STATUS: Record<string, [string, Tone]> = {
   wrong_person: ["Not the household owner", "danger"], refunded: ["Refund settled", "success"], requested: ["Requested", "neutral"],
   low: ["Low balance", "warning"], ok: ["Healthy", "success"],
 };
+/** Outcome badge key: a damaged parcel whose partial refund wasn't accepted settles as "timeout" on-chain,
+ *  but it isn't a delivery timeout, so show it as "Damaged · not accepted". */
+export const outcomeKey = (o: { outcome?: string | null; inspection?: { outcome?: string } | null }) =>
+  o.outcome === "timeout" && o.inspection?.outcome === "damaged" ? "damaged_not_accepted" : o.outcome;
 export const statusLabel = (s?: string | null) => (s ? STATUS[s]?.[0] ?? s.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()) : "—");
 export function Badge({ tone = "neutral", children, dot = true, title }: { tone?: Tone; children: ReactNode; dot?: boolean; title?: string }) {
   return <span className={`badge ${tone} ${dot ? "" : "nodot"}`} title={title}>{children}</span>;

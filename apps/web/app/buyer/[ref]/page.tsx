@@ -2,11 +2,11 @@
 import { use } from "react";
 import { MiniTop } from "../../components/Top";
 import {
-  Callout, Card, EmptyState, Icon, InspectionList, Money, ReceiptList, Skeleton, StatusBadge, Stepper, fmtAmount, fmtRelDay,
+  Callout, Card, outcomeKey, EmptyState, Icon, InspectionList, Money, ReceiptList, Skeleton, StatusBadge, Stepper, fmtAmount, fmtRelDay,
   type StepState,
 } from "../../components/ui";
 import { api, useEvents, usePoll } from "../../lib/api";
-import { RefundApproval } from "../../components/approval";
+import { RefundApproval, useNow } from "../../components/approval";
 
 const PK = process.env.NEXT_PUBLIC_PUBLISHABLE_KEY ?? "pk_demo_openbox";
 const STORE = process.env.NEXT_PUBLIC_STORE_URL;
@@ -44,6 +44,7 @@ export default function Buyer({ params }: { params: Promise<{ ref: string }> }) 
   const tick = useEvents(ref);
   const [o, reload, err] = usePoll(() => api("GET", `/v1/orders/${ref}`), [ref, tick]);
   const [cat] = usePoll(() => api("GET", `/v1/catalog/${PK}`), []);
+  const nowS = useNow();
   const store = cat?.merchant ?? "Your order";
   const notFound = !o && err && /not found|404/i.test(err);
   const placed = o?.createdAt ?? o?.receipts?.[0]?.at;
@@ -78,7 +79,7 @@ export default function Buyer({ params }: { params: Promise<{ ref: string }> }) 
                 <h1>{o.product}</h1>
                 <div className="sub">Order <span className="mono">{o.ref}</span>{placed ? <> · placed {fmtRelDay(placed)}</> : null}</div>
               </div>
-              <div className="badges"><StatusBadge s={o.awaitingBuyer ? "awaiting_buyer" : o.status} />{o.outcome && <StatusBadge s={o.outcome} />}</div>
+              <div className="badges"><StatusBadge s={o.awaitingBuyer ? "awaiting_buyer" : o.status} />{o.outcome && <StatusBadge s={outcomeKey(o)} />}</div>
             </div>
 
             <div className="card card-b"><Stepper steps={buildSteps(o)} label="Order progress" /></div>
@@ -86,7 +87,11 @@ export default function Buyer({ params }: { params: Promise<{ ref: string }> }) 
             {["paid", "packed"].includes(o.status) && <Callout tone="info" icon="lock" title="Payment received and held">Your payment is held until the parcel is checked at your door. If it isn't what you ordered, you get your money back.</Callout>}
             {o.status === "dispatched" && <Callout tone="info" icon="truck" title={`${o.courier ?? "Your courier"} is on the way`}>When the parcel arrives, open it in front of your doorbell camera. The seller is paid only if it&apos;s what you ordered.</Callout>}
             {o.status === "handed_over" && !o.awaitingBuyer && !o.outcome && <Callout tone="info" icon="camera" title="Open the box at your door">Hold the item&apos;s label up to the doorbell camera so it can be checked.</Callout>}
-            {o.awaitingBuyer && (
+            {o.awaitingBuyer && (o.decisionDeadline && o.decisionDeadline <= nowS ? (
+              <Callout tone="neutral" icon="clock" title="Time to accept the partial refund has passed">
+                Nothing was refunded. The seller is being paid in full and you keep the item. You can still return it within {Math.round(Number(o.returnWindowS ?? 604800) / 86400)} days for a refund.
+              </Callout>
+            ) : (
               <div className="stack-12">
                 <Callout tone="warning" title="Damage found at delivery">
                   The inspector found damage. You can keep the item and get {o.inspection?.refundBps ? `${o.inspection.refundBps / 100}%` : "part"} of your payment back.
@@ -94,7 +99,7 @@ export default function Buyer({ params }: { params: Promise<{ ref: string }> }) 
                 <RefundApproval orderRef={o.ref} refundPct={o.inspection?.refundBps ? o.inspection.refundBps / 100 : undefined}
                   deadline={o.decisionDeadline} returnWindowS={o.returnWindowS} onSettled={reload} />
               </div>
-            )}
+            ))}
             {o.outcome === "match" && <Callout tone="success" title="Delivered and verified">The parcel matched your order, so the seller has been paid. Enjoy!</Callout>}
             {o.outcome === "mismatch" && (
               <Callout tone="danger" title="This wasn't what you ordered">

@@ -3,8 +3,8 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { MiniTop } from "../components/Top";
 import { Badge, Callout, EmptyState, Icon, Skeleton, StatusBadge, Stepper, Timestamp, type StepState } from "../components/ui";
-import { api } from "../lib/api";
-import { APPROVAL_LABEL, APPROVAL_OPEN, ApprovalTimeline, DemoApprover, approvalTone } from "../components/approval";
+import { api, usePoll } from "../lib/api";
+import { APPROVAL_LABEL, APPROVAL_OPEN, ApprovalTimeline, DemoApprover, approvalTone, hhmm, inText, useNow } from "../components/approval";
 
 const PERSONAS: { id: string; name: string; note: string; color: string }[] = [
   { id: "alice", name: "Alice", note: "Assigned courier", color: "#0F766E" },
@@ -140,6 +140,9 @@ function Courier() {
 /** Phone page for the household owner's World ID Agent Pass approval (mock mode lands here from the QR). */
 function HouseholdApproval({ r, reload }: { r: any; reload: () => void }) {
   const open = APPROVAL_OPEN.includes(r.status);
+  const nowS = useNow();
+  const [order] = usePoll<any>(() => api("GET", `/v1/orders/${encodeURIComponent(r.orderRef)}`), [r.orderRef, r.status]);
+  const deadline: number | null | undefined = order?.decisionDeadline;
   const tone = approvalTone(r.status) as "success" | "danger" | "neutral" | "info";
   return (
     <>
@@ -154,6 +157,13 @@ function HouseholdApproval({ r, reload }: { r: any; reload: () => void }) {
               Refunds the agent accepts for you need a fresh World ID check, so nobody else can act on your behalf.
             </div>
           </div>
+          {open && deadline && (
+            <div className="small text-2 row" style={{ flexWrap: "nowrap", alignItems: "flex-start" }}><Icon name="clock" />
+              <span>{deadline > nowS
+                ? <>Decide by <b className="tnum">{hhmm(deadline)}</b> ({inText(deadline - nowS)}). If the refund isn&apos;t accepted by then, the seller is paid in full and the buyer keeps the item.</>
+                : <>The time to accept has passed. The seller is being paid in full and the buyer keeps the item.</>}</span>
+            </div>
+          )}
           {open && (r.mode === "mock"
             ? <DemoApprover requestId={r.id} onDone={reload} />
             : (
