@@ -1,0 +1,18 @@
+# Never upload secrets or local state to Vercel
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+.hedera-mock
+.claude
+*.log
+# Not needed to build the web app
+contracts/lib
+contracts/out
+contracts/cache
+contracts/broadcast
+**/node_modules
+**/.next
+**/dist
+*.tsbuildinfo
