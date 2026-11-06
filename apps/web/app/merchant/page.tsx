@@ -1,12 +1,13 @@
 "use client";
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { Top } from "../components/Top";
 import {
   Badge, Callout, Card, CodeBlock, CopyButton, EmptyState, ExtLink, Field, Hash, Icon, KpiTile, Money, PageHeader,
-  InspectionList, ReceiptList, Skeleton, hashscan, fmtGas, SkeletonRows, StatusBadge, Timestamp, fmtAmount,
+  InspectionList, ReceiptList, Skeleton, hashscan, fmtGas, SkeletonRows, StatusBadge, Timestamp, fmtAmount, Dialog, Drawer,
 } from "../components/ui";
 import { api, merchant, useEvents, usePoll } from "../lib/api";
+import { AdvanceBadge, AdvanceCard } from "../components/finance";
 
 const STICKERS = ["SN-AX1-7731-0042", "SN-PBP-5520-0007", "SN-LT11-3304-0019", "SN-AX1-7731-1001"];
 const DEMO_COURIER = process.env.NEXT_PUBLIC_DEMO_COURIER ?? "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955";
@@ -92,6 +93,9 @@ export default function Merchant() {
   const current = list.find((o) => o.ref === open);
   const refByOrderId = Object.fromEntries(list.map((o) => [o.orderId?.toLowerCase(), o.ref]));
   const merchantName = stats?.merchant?.name;
+  // Lender fees on advanced orders: order payout (amount − courier fee) minus the advance.
+  const advanceFees = list.filter((o) => o.advance && o.advance.status !== "offered")
+    .reduce((s, o) => s + Math.max(0, Number(o.amount) - Number(o.courierFee) - Number(o.advance.advance)), 0);
 
   return (
     <>
@@ -119,7 +123,7 @@ export default function Merchant() {
 
         {tab === "overview" && (
           <>
-            <div className="kpis">
+            <div className={`kpis ${stats?.financing?.enabled ? "six" : ""}`}>
               <KpiTile label="Gross volume" value={gross} loading={orders === undefined && !err} error={!!err}
                 sub={t ? `${t.orders} order${t.orders === 1 ? "" : "s"} · ${t.settled} settled` : undefined} />
               <KpiTile label="Paid out to you" value={t ? t.sellerPaid / 1e6 : undefined} loading={statsLoading} error={!!statsErr}
@@ -127,6 +131,12 @@ export default function Merchant() {
               <KpiTile label="Refunded to buyers" value={t ? t.refunded / 1e6 : undefined} loading={statsLoading} error={!!statsErr} sub="Wrong item or damage at the door" />
               <KpiTile label="Courier fees" value={t ? t.courierPaid / 1e6 : undefined} loading={statsLoading} error={!!statsErr} sub="Paid on verified handover" />
               <KpiTile label="Refund pool" value={stats?.refundPool} loading={statsLoading} error={!!statsErr} sub="Covers refunds on returns" />
+              {stats?.financing?.enabled && (
+                <KpiTile label="Advanced to you" value={stats.financing.advanced}
+                  sub={stats.financing.count > 0
+                    ? <>{stats.financing.count} order{stats.financing.count === 1 ? "" : "s"} · fees {fmtAmount(advanceFees)}{stats.financing.active > 0 ? <> · {fmtAmount(stats.financing.bondHeld)} bond held</> : <> · bonds returned {fmtAmount(stats.financing.bondReturned)}</>}</>
+                    : "Get paid before delivery"} />
+              )}
             </div>
 
             <Card flush title="Recent orders" desc="Click an order for receipts, inspection and next steps.">
@@ -149,12 +159,14 @@ export default function Merchant() {
                           <td><button type="button" className="chev" aria-label={`Open details for ${o.ref}`} aria-haspopup="dialog" aria-expanded={open === o.ref} onClick={(e) => { e.stopPropagation(); setOpen(o.ref); }}><Icon name="chevron-right" /></button></td>
                           <td className="nowrap"><span className="strong mono" style={{ fontSize: 13 }}>{o.ref}</span><div className="cell-sub"><Timestamp ts={o.createdAt} /></div></td>
                           <td style={{ minWidth: 160 }}>{o.product}{o.serial && <div className="cell-sub mono">{o.serial}</div>}</td>
-                          <td><StatusBadge s={o.awaitingBuyer ? "awaiting_buyer" : o.status} /></td>
+                          <td><div className="badges"><StatusBadge s={o.awaitingBuyer ? "awaiting_buyer" : o.status} /><AdvanceBadge a={o.advance} /></div></td>
                           <td>{o.outcome ? <StatusBadge s={o.outcome} /> : <span className="muted">—</span>}</td>
                           <td className="num"><Money v={o.amount} cur={null} /></td>
                           <td className="num"><Money v={o.courierFee} cur={null} /></td>
                           <td className="num">{Number(o.buyerRefunded) > 0 ? <Money v={o.buyerRefunded} cur={null} /> : <span className="muted">—</span>}</td>
-                          <td className="num">{["settled", "returned", "returned_to_seller"].includes(o.status) || o.outcome ? <Money v={o.sellerPaid} cur={null} strong /> : <span className="muted" title="Released when delivery is verified">Held</span>}</td>
+                          <td className="num">{o.advance && o.advance.status !== "offered"
+                            ? <><Money v={o.advance.received} cur={null} strong /><div className="cell-sub">{o.advance.status === "funded" ? "Advanced" : "Incl. advance"}</div></>
+                            : ["settled", "returned", "returned_to_seller"].includes(o.status) || o.outcome ? <Money v={o.sellerPaid} cur={null} strong /> : <span className="muted" title="Released when delivery is verified">Held</span>}</td>
                           <td onClick={(e) => e.stopPropagation()}><NextStep o={o} req={worldReq[o.ref]} onOpen={() => setOpen(o.ref)} /></td>
                         </tr>
                       </Fragment>
@@ -170,7 +182,7 @@ export default function Merchant() {
                     <button type="button" className="list-btn" onClick={() => setOpen(o.ref)} aria-haspopup="dialog">
                       <div className="row between"><span className="strong mono" style={{ fontSize: 13 }}>{o.ref}</span><Money v={o.amount} strong /></div>
                       <div className="row between mt-8"><span className="small text-2 truncate grow">{o.product}</span><span className="xs muted"><Timestamp ts={o.createdAt} /></span></div>
-                      <div className="badges mt-8"><StatusBadge s={o.awaitingBuyer ? "awaiting_buyer" : o.status} />{o.outcome && <StatusBadge s={o.outcome} />}</div>
+                      <div className="badges mt-8"><StatusBadge s={o.awaitingBuyer ? "awaiting_buyer" : o.status} />{o.outcome && <StatusBadge s={o.outcome} />}<AdvanceBadge a={o.advance} /></div>
                     </button>
                     {["paid", "packed", "dispatched", "returning"].includes(o.status) && <div className="list-actions"><NextStep o={o} req={worldReq[o.ref]} onOpen={() => setOpen(o.ref)} /></div>}
                   </li>
@@ -334,7 +346,7 @@ export default function Merchant() {
 
       {current && (
         <Drawer onClose={() => setOpen(undefined)} title={<span className="mono">{current.ref}</span>}
-          sub={<div className="badges mt-8"><StatusBadge s={current.awaitingBuyer ? "awaiting_buyer" : current.status} />{current.outcome && <StatusBadge s={current.outcome} />}</div>}>
+          sub={<div className="badges mt-8"><StatusBadge s={current.awaitingBuyer ? "awaiting_buyer" : current.status} />{current.outcome && <StatusBadge s={current.outcome} />}<AdvanceBadge a={current.advance} /></div>}>
           <section>
             <div className="strong" style={{ fontSize: 16 }}>{current.product}</div>
             <div className="small muted">Placed <Timestamp ts={current.createdAt} mode="abs" /></div>
@@ -390,13 +402,17 @@ export default function Merchant() {
             </section>
           )}
 
+          {(current.advance || ["paid", "packed", "dispatched", "handed_over"].includes(current.status)) && <AdvanceCard refId={current.ref} tick={tick} />}
+
           <section>
             <h3>Payment</h3>
             <ul className="lines">
               <li><span>Order total</span><Money v={current.amount} /></li>
               <li><span>Courier fee</span><Money v={-Number(current.courierFee)} /></li>
               {Number(current.buyerRefunded) > 0 && <li><span>Refunded to buyer</span><Money v={-Number(current.buyerRefunded)} /></li>}
-              <li className="total"><span>Net to you</span>{current.outcome || current.status === "settled" ? <Money v={current.sellerPaid} /> : <span className="muted">Held until delivery is verified</span>}</li>
+              {current.advance && current.advance.status !== "offered"
+                ? <li className="total"><span>Net to you</span><span className="small text-2" style={{ fontWeight: 400 }}>Paid as an invoice advance, see above</span></li>
+                : <li className="total"><span>Net to you</span>{current.outcome || current.status === "settled" ? <Money v={current.sellerPaid} /> : <span className="muted">Held until delivery is verified</span>}</li>}
             </ul>
           </section>
 
@@ -463,50 +479,4 @@ function NextStep({ o, req, onOpen }: { o: any; req?: any; onOpen: () => void })
   if (o.awaitingBuyer) return <span className="small muted">Buyer deciding</span>;
   if (o.status === "handed_over") return <span className="small muted">Inspecting</span>;
   return <button type="button" className="btn ghost sm" onClick={onOpen}>View</button>;
-}
-
-function useModal(onClose: () => void) {
-  const ref = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    const prev = document.activeElement as HTMLElement | null;
-    ref.current?.focus();
-    const k = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", k);
-    const o = document.body.style.overflow; document.body.style.overflow = "hidden";
-    return () => { document.removeEventListener("keydown", k); document.body.style.overflow = o; prev?.focus?.(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return ref;
-}
-
-function Drawer({ title, sub, children, onClose }: { title: ReactNode; sub?: ReactNode; children: ReactNode; onClose: () => void }) {
-  const closeRef = useModal(onClose);
-  return (
-    <>
-      <div className="overlay" onClick={onClose} />
-      <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
-        <div className="drawer-h">
-          <div><h2 id="drawer-title">{title}</h2>{sub}</div>
-          <button ref={closeRef} type="button" className="btn ghost sm" aria-label="Close" onClick={onClose}><Icon name="x" /></button>
-        </div>
-        <div className="drawer-b">{children}</div>
-      </aside>
-    </>
-  );
-}
-
-function Dialog({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
-  const closeRef = useModal(onClose);
-  return (
-    <>
-      <div className="overlay" onClick={onClose} />
-      <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
-        <div className="row between" style={{ padding: "20px 24px 0" }}>
-          <h2 id="dialog-title">{title}</h2>
-          <button ref={closeRef} type="button" className="btn ghost sm" aria-label="Close" onClick={onClose}><Icon name="x" /></button>
-        </div>
-        {children}
-      </div>
-    </>
-  );
 }

@@ -124,7 +124,7 @@ export default function Buyer({ params }: { params: Promise<{ ref: string }> }) 
                   </ul>
                 </Card>
                 <Card flush title="Receipts" desc="Each step is recorded publicly so anyone can check it.">
-                  <ReceiptList receipts={o.receipts} audience="buyer" />
+                  <ReceiptList receipts={o.receipts} audience="buyer" sellerPaid={o.sellerPaid} />
                 </Card>
               </div>
               <Card title="Inspection" desc={o.inspection ? "Checked by an independent inspector your doorbell hired." : undefined}>

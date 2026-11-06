@@ -55,3 +55,11 @@ export function usePoll<T>(fn: () => Promise<T>, deps: unknown[], ms = 0): [T | 
 export const short = (a?: string | null, n = 6) => (a ? `${a.slice(0, n)}…${a.slice(-4)}` : "—");
 export const usd = (v?: string | number | null) => (v == null ? "—" : `${Number(v).toFixed(2)}`);
 export const isLocal = (u?: string) => !u || u.startsWith("local://");
+
+/** Lender desk calls go through the Next.js server proxy (holds the lender key). */
+export async function lender<T = any>(method: string, path: string, body?: unknown): Promise<T> {
+  const r = await fetch(`/api/lender/${path}`, { method, headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(j.message ?? `HTTP ${r.status}`), { status: r.status });
+  return j as T;
+}

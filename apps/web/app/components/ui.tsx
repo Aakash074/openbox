@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api, isLocal, useEvents } from "../lib/api";
 
 /* ─── icons (inline, lucide-style 24px stroke paths) ────────────────────────────────────── */
@@ -283,13 +283,22 @@ const EVENT_LABEL: Record<string, string> = {
   OrderCreated: "Payment received", Paid: "Payment received", Dispatched: "Out for delivery", HandedOver: "Delivered",
   Settled: "Order settled", CourierPaid: "Courier paid", SellerPaid: "Seller paid", BuyerRefunded: "Refund to buyer",
   ReturnToSender: "Return started", ReturnRefunded: "Return refunded", Returned: "Return received", Cancelled: "Order cancelled",
+  // invoice advances (merchant view only; the API hides these from buyers)
+  NoteFunded: "Invoice advance received", PayoutLocked: "Payout assigned to lender", PayoutToNote: "Payout repays advance", NoteClosed: "Bond returned",
+};
+/** Amount a receipt line moved, in USDT. Advances show what reached the seller. */
+const receiptAmount = (r: Receipt): number | undefined => {
+  const d = r.data ?? {};
+  if (r.event === "NoteFunded") return (Number(d.advance) - Number(d.holdback)) / 1e6;
+  if (r.event === "NoteClosed") return Number(d.toSeller) > 0 ? Number(d.toSeller) / 1e6 : undefined;
+  return d.amount != null ? Number(d.amount) / 1e6 : undefined;
 };
 export const eventLabel = (e: string) => EVENT_LABEL[e] ?? e.replace(/([a-z])([A-Z])/g, "$1 $2");
 export type Receipt = { event: string; txHash: string; explorerUrl?: string; at?: number; data: any };
 export type ReceiptGroup = { txHash: string; explorerUrl?: string; at?: number; title: string; lines: { label: string; amount?: number }[] };
 const MERCHANT_LABEL: Record<string, string> = { HandedOver: "Delivered to buyer", BuyerRefunded: "Refund to buyer" };
 const BUYER_LABEL: Record<string, string> = { HandedOver: "Delivered", BuyerRefunded: "Refund to you" };
-export function groupReceipts(receipts: Receipt[], audience: "buyer" | "merchant" = "merchant"): ReceiptGroup[] {
+export function groupReceipts(receipts: Receipt[], audience: "buyer" | "merchant" = "merchant", sellerPaid?: string | number | null): ReceiptGroup[] {
   const L = audience === "buyer" ? BUYER_LABEL : MERCHANT_LABEL;
   const lbl = (e: string) => L[e] ?? eventLabel(e);
   const out: ReceiptGroup[] = [];
@@ -297,16 +306,21 @@ export function groupReceipts(receipts: Receipt[], audience: "buyer" | "merchant
     let g = out.find((x) => x.txHash === r.txHash);
     if (!g) { g = { txHash: r.txHash, explorerUrl: r.explorerUrl, at: r.at, title: lbl(r.event), lines: [] }; out.push(g); }
     const label = lbl(r.event);
-    const amount = r.data?.amount != null ? Number(r.data.amount) / 1e6 : undefined;
-    g.lines.push({ label, amount });
+    g.lines.push({ label, amount: receiptAmount(r) });
   }
-  for (const g of out) if (g.lines.length > 1) g.title = g.lines.some((l) => l.label === "Order settled") ? "Settlement" : g.title;
+  // Buyer view: when the seller's share was paid on the seller's behalf (e.g. to a financing partner), the API omits
+  // that line. Show it as "Seller paid" on the settlement so the receipt matches the payment summary.
+  if (audience === "buyer" && Number(sellerPaid) > 0 && !out.some((g) => g.lines.some((l) => l.label === EVENT_LABEL.SellerPaid))) {
+    const settle = out.find((g) => g.lines.some((l) => l.label === EVENT_LABEL.Settled));
+    if (settle) settle.lines.push({ label: EVENT_LABEL.SellerPaid, amount: Number(sellerPaid) });
+  }
+  for (const g of out) if (g.lines.length > 1) g.title = g.lines.some((l) => l.label === "Order settled") ? "Settlement" : g.lines.some((l) => l.label === EVENT_LABEL.NoteFunded) ? EVENT_LABEL.NoteFunded : g.title;
   return out;
 }
 
 /** Receipts list: event, amount, time, receipt link; groups lines that share one transaction. */
-export function ReceiptList({ receipts, audience = "merchant" }: { receipts: Receipt[]; audience?: "buyer" | "merchant" }) {
-  const groups = groupReceipts(receipts, audience);
+export function ReceiptList({ receipts, audience = "merchant", sellerPaid }: { receipts: Receipt[]; audience?: "buyer" | "merchant"; sellerPaid?: string | number | null }) {
+  const groups = groupReceipts(receipts, audience, sellerPaid);
   if (!groups.length) return <EmptyState small icon="receipt" title="No receipts yet">They appear here as each step is recorded.</EmptyState>;
   return (
     <ul className="list">
@@ -415,5 +429,52 @@ export function InspectionList({ i, expected, audience = "merchant" }: { i: any;
         {i.hcs?.sequence && (i.payment?.mock ? <span className="muted">Verdict #{i.hcs.sequence}</span> : <ExtLink href={hashscan(network, "topic", i.hcs.topicId)}>Verdict #{i.hcs.sequence}</ExtLink>)}
       </dd>
     </dl>
+  );
+}
+
+/* ─── overlays: drawer + dialog (focus moves in, Esc closes, focus returns) ─────────────── */
+export function useModal(onClose: () => void) {
+  const ref = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const prev = document.activeElement as HTMLElement | null;
+    ref.current?.focus();
+    const k = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", k);
+    const o = document.body.style.overflow; document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", k); document.body.style.overflow = o; prev?.focus?.(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return ref;
+}
+
+export function Drawer({ title, sub, children, onClose }: { title: ReactNode; sub?: ReactNode; children: ReactNode; onClose: () => void }) {
+  const closeRef = useModal(onClose);
+  return (
+    <>
+      <div className="overlay" onClick={onClose} />
+      <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+        <div className="drawer-h">
+          <div><h2 id="drawer-title">{title}</h2>{sub}</div>
+          <button ref={closeRef} type="button" className="btn ghost sm" aria-label="Close" onClick={onClose}><Icon name="x" /></button>
+        </div>
+        <div className="drawer-b">{children}</div>
+      </aside>
+    </>
+  );
+}
+
+export function Dialog({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
+  const closeRef = useModal(onClose);
+  return (
+    <>
+      <div className="overlay" onClick={onClose} />
+      <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+        <div className="row between" style={{ padding: "20px 24px 0" }}>
+          <h2 id="dialog-title">{title}</h2>
+          <button ref={closeRef} type="button" className="btn ghost sm" aria-label="Close" onClick={onClose}><Icon name="x" /></button>
+        </div>
+        {children}
+      </div>
+    </>
   );
 }
