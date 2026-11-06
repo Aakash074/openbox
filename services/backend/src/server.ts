@@ -10,7 +10,8 @@ import { relay, relayerStatus, RelayError } from "./relayer";
 import { indexNow, startIndexer } from "./indexer";
 import { startWebhookWorker } from "./webhooks";
 import { createSession, merchantByPk, merchantBySk, merchantById, pay, prepare, sessionView, type Merchant } from "./checkout";
-import { demoFund, depositRefundPool, exportCsv, merchantOrders, orderView, pack, refundPool, scan, tokenInfo, usdtBalance } from "./ops";
+import { demoFund, depositRefundPool, exportCsv, FINANCE_EVENTS, merchantOrders, orderView, pack, refundPool, scan, tokenInfo, usdtBalance } from "./ops";
+import { createOffer, financingView, fundOffer, lenderAddress, marketplace, merchantFinanceStats } from "./finance";
 import { cancelRequest, createRequest, getRequest, publicView, startWorldPoller, verifier } from "./world/service";
 import { mockComplete, PERSONAS } from "./world/mock";
 import { acceptPartialRefund, discoverInspectors, inspect, lastFrame, startKeeper, topics } from "./agent/household";
@@ -53,6 +54,12 @@ app.setErrorHandler((err: Error & { statusCode?: number }, _req, reply) => {
   return reply.code(err.statusCode ?? 400).send({ error: "failed", message: err.message });
 });
 
+/** Demo lender desk: a bearer key held by the web app's server-side proxy (like the merchant secret key). */
+const lenderAuth = (req: FastifyRequest) => {
+  const h = req.headers.authorization ?? "";
+  if (h !== `Bearer ${cfg.finance.lenderApiKey}`) throw Object.assign(new Error("invalid lender key"), { statusCode: 401 });
+};
+
 const merchantAuth = (req: FastifyRequest): Merchant => {
   const h = req.headers.authorization ?? "";
   const m = h.startsWith("Bearer ") ? merchantBySk(h.slice(7)) : undefined;
@@ -66,6 +73,7 @@ app.get("/v1/config", async () => ({
   chainId: cfg.chainId, rpcUrl: cfg.rpcUrl, explorer: cfg.explorer, deliveryCheckout: deployment.deliveryCheckout,
   accountFactory: deployment.accountFactory, token: await tokenInfo(), gaslessMode: cfg.gaslessMode, demoMode: cfg.demoMode,
   worldMode: verifier.kind, hederaMode: cfg.agent.hederaMode, inspectionWindowS: Number(cfg.windows.inspection),
+  receivableNote: deployment.receivableNote ?? null,
 }));
 
 // ---- checkout (SDK) --------------------------------------------------------------------
@@ -100,7 +108,7 @@ app.get("/v1/orders/:ref", async (req) => {
   const o = getOrderByRef((req.params as { ref: string }).ref);
   if (!o) throw Object.assign(new Error("not found"), { statusCode: 404 });
   const { qr: _qr, ...view } = orderView(o);
-  return view;
+  return { ...view, receipts: view.receipts.filter((r) => !FINANCE_EVENTS.has(r.event)) }; // seller financing is private
 });
 app.post("/v1/orders/:ref/accept-partial-refund", async (req) => acceptPartialRefund((req.params as { ref: string }).ref));
 app.post("/v1/orders/:ref/cancel-undelivered", async (req) => {
@@ -213,6 +221,25 @@ app.post("/v1/merchant/orders/:ref/return-received", async (req) => {
   db.prepare("UPDATE orders SET status = 'returned_to_seller', updated_at = ? WHERE ref = ?").run(now(), ref);
   return { ok: true };
 });
+/** Invoice advance for one order: quote, eligibility, current offer and note state. */
+app.get("/v1/merchant/orders/:ref/financing", async (req) => {
+  const m = merchantAuth(req);
+  const o = getOrderByRef((req.params as { ref: string }).ref);
+  if (!o || o.merchant_id !== m.id) throw Object.assign(new Error("not found"), { statusCode: 404 });
+  return financingView(o);
+});
+/** Seller requests an advance: signs FinanceOffer + LockPayout with the seller key and lists the offer for lenders. */
+app.post("/v1/merchant/orders/:ref/financing", async (req) => createOffer(merchantAuth(req), (req.params as { ref: string }).ref));
+
+// ---- lender (invoice marketplace) --------------------------------------------------------
+app.get("/v1/lender/marketplace", async (req) => { lenderAuth(req); return marketplace(); });
+/** Demo lender funds an open offer from DEMO_LENDER_PK (approve if needed, then ReceivableNote.finance). */
+app.post("/v1/lender/offers/:id/fund", async (req) => {
+  lenderAuth(req);
+  const { id } = z.object({ id: z.coerce.number().int().positive() }).parse(req.params);
+  return fundOffer(id);
+});
+
 app.get("/v1/merchant/export.csv", async (req, reply) => {
   const m = merchantAuth(req);
   reply.header("content-type", "text/csv; charset=utf-8");
@@ -227,11 +254,17 @@ app.get("/v1/merchant/stats", async (req) => {
             SUM(CAST(courier_paid AS INTEGER)) AS courierPaid
      FROM orders WHERE merchant_id = ? AND status != 'created'`,
   ).get(m.id);
+  const financing = merchantFinanceStats(m.id);
+  const { toNoteRaw, receivedRaw, ...fin } = financing;
+  const tot = totals as { sellerPaid: number | null };
+  // "Paid out to you": payouts routed to a note repaid the lender; the seller got the advance and bond instead.
+  tot.sellerPaid = Number(BigInt(tot.sellerPaid ?? 0) - toNoteRaw + receivedRaw);
   const webhooks = db.prepare("SELECT event, status, attempts, delivered_at FROM webhook_deliveries WHERE merchant_id = ? ORDER BY id DESC LIMIT 15").all(m.id);
   return {
     merchant: { id: m.id, name: m.name, seller: m.seller, webhookUrl: m.webhook_url },
     totals, refundPool: await refundPool(m), relayer: await relayerStatus(), agent: policySummary(), webhooks,
     sellerBalance: await usdtBalance(m.seller),
+    financing: fin,
   };
 });
 app.post("/v1/merchant/refund-pool", async (req) => {
@@ -258,7 +291,7 @@ app.get("/v1/demo/balances", async (req) => {
     { role: "buyer", address: o?.buyer },
     { role: "courier", address: o?.courier_payout },
     { role: "seller", address: accounts.seller.address },
-    { role: "lender", address: process.env.LENDER_ADDR },
+    { role: "lender", address: lenderAddress() },
   ];
   const out = [];
   for (const p of parties) out.push({ ...p, usdt: p.address ? await usdtBalance(p.address as Address) : null });

@@ -24,6 +24,10 @@ export type Deployment = {
   deployBlock: number;
   attester: Address;
   inspector: Address;
+  /** Optional: invoice advances are disabled when the note isn't deployed on this chain. */
+  receivableNote?: Address;
+  receivableNoteBlock?: number;
+  lender?: Address;
 };
 
 const chainId = num("CHAIN_ID", 31337);
@@ -51,6 +55,15 @@ export const cfg = {
     attester: env("ATTESTER_PK") as Hex,
     seller: env("SELLER_PK") as Hex, // demo merchant signer (production: merchant's own server)
     demoTreasury: process.env.DEMO_TREASURY_PK as Hex | undefined,
+    demoLender: process.env.DEMO_LENDER_PK as Hex | undefined, // demo lender wallet (allowlisted on ReceivableNote)
+  },
+
+  /** Invoice advances (ReceivableNote). Shares of the order's face value (amount - courier fee), in basis points. */
+  finance: {
+    advanceBps: BigInt(num("FINANCE_ADVANCE_BPS", 9500)),
+    holdbackBps: BigInt(num("FINANCE_HOLDBACK_BPS", 1000)),
+    offerTtlS: num("FINANCE_OFFER_TTL_S", 2 * 3600),
+    lenderApiKey: env("LENDER_API_KEY", "lk_demo_openbox"),
   },
 
   windows: {

@@ -1,6 +1,6 @@
 import { parseEventLogs, type Hex } from "viem";
-import { deliveryCheckoutAbi, Outcome, outcomeLabel, type WebhookEvent } from "@openbox/shared";
-import { checkout, deployment, publicClient, txUrl } from "./chain";
+import { deliveryCheckoutAbi, Outcome, outcomeLabel, receivableNoteAbi, type WebhookEvent } from "@openbox/shared";
+import { checkout, deployment, note, noteTokenUrl, publicClient, txUrl } from "./chain";
 import { db, getOrderById, kvGet, kvSet, updateOrder } from "./db";
 import { publish } from "./bus";
 import { enqueueWebhook } from "./webhooks";
@@ -10,6 +10,8 @@ import { enqueueWebhook } from "./webhooks";
  * to SSE + merchant webhooks. Polling (not filters) so it works on any RPC.
  */
 const KEY = `indexer:${deployment.deliveryCheckout.toLowerCase()}`;
+const NOTE_KEY = note ? `indexer:${note.address.toLowerCase()}` : undefined;
+const NOTE_EVENTS = new Set(["NoteFunded", "NoteClosed"]);
 const MAX_RANGE = 2000n;
 const blockTs = new Map<bigint, number>();
 
@@ -34,7 +36,24 @@ async function tick() {
     kvSet(KEY, (to + 1n).toString());
     from = to + 1n;
   }
+  await tickNote(head);
 }
+
+/** ReceivableNote (invoice advances): NoteFunded / NoteClosed → financing row, order timeline, SSE, webhooks. */
+async function tickNote(head: bigint) {
+  if (!note || !NOTE_KEY) return;
+  let from = BigInt(kvGet(NOTE_KEY) ?? deployment.receivableNoteBlock ?? deployment.deployBlock ?? 0);
+  while (from <= head) {
+    const to = from + MAX_RANGE - 1n < head ? from + MAX_RANGE - 1n : head;
+    const raw = await publicClient.getLogs({ address: note.address, fromBlock: from, toBlock: to });
+    const logs = parseEventLogs({ abi: receivableNoteAbi, logs: raw }).filter((l) => NOTE_EVENTS.has(l.eventName));
+    for (const log of logs) await handle(log as unknown as Decoded);
+    kvSet(NOTE_KEY, (to + 1n).toString());
+    from = to + 1n;
+  }
+}
+
+const NOTE_STATUS = ["none", "active", "repaid", "shortfall"] as const;
 
 type Decoded = {
   eventName: string; args: Record<string, unknown>; transactionHash: Hex; logIndex: number; blockNumber: bigint;
@@ -98,6 +117,32 @@ async function handle(log: Decoded) {
       updateOrder(o.ref, { status: "returned", return_tx: tx, buyer_refunded: add(o.buyer_refunded, a.amount as bigint) });
       hook = "order.return_refunded"; data = { buyer: a.buyer, amount: String(a.amount), hcsSeq: String(a.hcsSeq) };
       break;
+    case "NoteFunded": {
+      db.prepare(
+        `UPDATE finance_offers SET status = 'funded', lender = ?, holder = COALESCE(holder, ?), fund_tx = ?, funded_at = COALESCE(funded_at, ?), updated_at = ?
+         WHERE id = (SELECT id FROM finance_offers WHERE order_id = ? ORDER BY (status = 'offered') DESC, id DESC LIMIT 1) AND status IN ('offered','expired','funded')`,
+      ).run(String(a.lender).toLowerCase(), String(a.lender).toLowerCase(), tx, ts, ts, orderId);
+      const sellerToday = (a.advance as bigint) - (a.holdback as bigint);
+      hook = "invoice.funded";
+      data = {
+        noteId: String(a.noteId), lender: a.lender, face: String(a.face), advance: String(a.advance), holdback: String(a.holdback),
+        sellerReceived: String(sellerToday), noteUrl: noteTokenUrl(orderId),
+      };
+      break;
+    }
+    case "NoteClosed": {
+      const status = NOTE_STATUS[Number(a.status)] ?? "repaid";
+      db.prepare(
+        `UPDATE finance_offers SET status = ?, holder = ?, close_tx = ?, to_holder = ?, to_seller = ?, outcome = ?, closed_at = ?, updated_at = ?
+         WHERE id = (SELECT id FROM finance_offers WHERE order_id = ? AND status IN ('funded','repaid','shortfall') ORDER BY id DESC LIMIT 1)`,
+      ).run(status, String(a.holder).toLowerCase(), tx, String(a.toHolder), String(a.toSeller), Number(a.outcome), ts, ts, orderId);
+      hook = "invoice.closed";
+      data = {
+        noteId: String(a.noteId), holder: a.holder, result: status, outcome: outcomeLabel[Number(a.outcome) as Outcome],
+        toHolder: String(a.toHolder), toSeller: String(a.toSeller),
+      };
+      break;
+    }
     case "DeliveryCancelled":
       updateOrder(o.ref, { status: "cancelled", buyer_refunded: add(o.buyer_refunded, a.amount as bigint) });
       hook = "order.cancelled"; data = { amount: String(a.amount) };

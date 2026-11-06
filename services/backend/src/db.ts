@@ -50,6 +50,16 @@ CREATE TABLE IF NOT EXISTS relayer_spend (
   id INTEGER PRIMARY KEY AUTOINCREMENT, day TEXT NOT NULL, ts INTEGER NOT NULL, fn TEXT NOT NULL,
   tx_hash TEXT, gas_used TEXT, cost_wei TEXT, ip TEXT, wallet TEXT
 );
+CREATE TABLE IF NOT EXISTS finance_offers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, order_ref TEXT NOT NULL, order_id TEXT NOT NULL, merchant_id TEXT NOT NULL,
+  note TEXT NOT NULL, face TEXT NOT NULL, advance TEXT NOT NULL, holdback TEXT NOT NULL, deadline INTEGER NOT NULL,
+  offer_sig TEXT NOT NULL, lock_sig TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'offered', -- offered | funded | repaid | shortfall | expired
+  lender TEXT, holder TEXT, fund_tx TEXT, close_tx TEXT, to_holder TEXT, to_seller TEXT, outcome INTEGER,
+  created_at INTEGER NOT NULL, funded_at INTEGER, closed_at INTEGER, updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS finance_offers_order ON finance_offers (order_id);
+CREATE INDEX IF NOT EXISTS finance_offers_status ON finance_offers (status);
 CREATE TABLE IF NOT EXISTS webhook_deliveries (
   id INTEGER PRIMARY KEY AUTOINCREMENT, merchant_id TEXT NOT NULL, event TEXT NOT NULL, payload TEXT NOT NULL,
   status INTEGER, attempts INTEGER NOT NULL DEFAULT 0, next_at INTEGER NOT NULL, delivered_at INTEGER

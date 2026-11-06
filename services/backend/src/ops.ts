@@ -5,7 +5,8 @@ import {
   USDT_DECIMALS,
 } from "@openbox/shared";
 import { cfg } from "./config";
-import { accounts, checkout, deployment, publicClient, readOrder, txUrl, wallet, checkoutDomain } from "./chain";
+import { accounts, checkout, deployment, note, publicClient, readOrder, txUrl, wallet, checkoutDomain } from "./chain";
+import { financeByOrder, financeSummary } from "./finance";
 import { db, getOrderById, getOrderByRef, now, updateOrder } from "./db";
 import { publish } from "./bus";
 import type { Merchant } from "./checkout";
@@ -67,7 +68,8 @@ const usdt = (v: string | bigint | null | undefined) => formatUnits(BigInt(v ?? 
 
 export function merchantOrders(m: Merchant) {
   const rows = db.prepare("SELECT * FROM orders WHERE merchant_id = ? ORDER BY created_at DESC LIMIT 200").all(m.id) as ReturnType<typeof getOrderByRef>[];
-  return rows.map((o) => orderView(o!));
+  const fin = financeByOrder(m.id);
+  return rows.map((o) => ({ ...orderView(o!), advance: financeSummary(fin.get(o!.order_id.toLowerCase())) }));
 }
 
 export function orderView(o: NonNullable<ReturnType<typeof getOrderByRef>>) {
@@ -80,10 +82,19 @@ export function orderView(o: NonNullable<ReturnType<typeof getOrderByRef>>) {
     courierPaid: usdt(o.courier_paid), sellerPaid: usdt(o.seller_paid), buyerRefunded: usdt(o.buyer_refunded),
     awaitingBuyer: !!o.pending_verdict_json,
     inspection: o.last_inspection_json ? JSON.parse(o.last_inspection_json) : null,
-    receipts: events.map((e) => ({ event: e.name, txHash: e.tx_hash, explorerUrl: txUrl(e.tx_hash), at: e.ts, data: JSON.parse(e.data_json) })),
+    receipts: events.map((e) => {
+      const data = JSON.parse(e.data_json);
+      // With an invoice advance, the seller share is paid to the note contract, which repays the lender.
+      const event = e.name === "SellerPaid" && isNote(data.seller) ? "PayoutToNote" : e.name;
+      return { event, txHash: e.tx_hash, explorerUrl: txUrl(e.tx_hash), at: e.ts, data };
+    }),
     createdAt: o.created_at,
   };
 }
+
+const isNote = (a?: string) => !!note && !!a && a.toLowerCase() === note.address.toLowerCase();
+/** Events about the seller's financing; not shown to buyers. */
+export const FINANCE_EVENTS = new Set(["NoteFunded", "NoteClosed", "PayoutLocked", "PayoutToNote"]);
 
 const CSV_COLS = [
   "timestamp_utc", "order_ref", "order_id", "product", "event", "outcome", "buyer", "seller", "counterparty",
@@ -107,7 +118,14 @@ export function exportCsv(m: Merchant) {
     switch (r.name) {
       case "OrderCreated": amount = usdt(d.amount); direction = "buyer->hold"; counterparty = d.buyer; break;
       case "CourierPaid": amount = usdt(d.amount); direction = "hold->courier"; counterparty = d.courier; break;
-      case "SellerPaid": amount = usdt(d.amount); direction = "hold->seller"; counterparty = d.seller; break;
+      case "SellerPaid":
+        amount = usdt(d.amount); counterparty = d.seller;
+        direction = isNote(d.seller) ? "hold->note (repays invoice advance)" : "hold->seller";
+        break;
+      case "NoteFunded": amount = usdt(BigInt(d.advance) - BigInt(d.holdback)); direction = "lender->seller (invoice advance)"; counterparty = d.lender; break;
+      case "NoteClosed":
+        if (BigInt(d.toSeller ?? 0) === 0n) continue; // bond fully used: no money to the seller
+        amount = usdt(d.toSeller); direction = "note->seller (bond returned)"; counterparty = note?.address ?? ""; break;
       case "BuyerRefunded": amount = usdt(d.amount); direction = "hold->buyer (refund)"; counterparty = d.buyer; break;
       case "ReturnRefunded": amount = usdt(d.amount); direction = "refund_pool->buyer (return)"; counterparty = d.buyer; break;
       case "DeliveryCancelled": amount = usdt(d.amount); direction = "hold->buyer (undelivered)"; counterparty = r.buyer as string; break;
