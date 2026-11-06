@@ -10,6 +10,7 @@ export const PERSONAS: Record<string, { name: string; sub: string }> = {
   alice: { name: "Alice (assigned courier)", sub: "pairwise-mock-alice-7f3a" },
   mallory: { name: "Mallory (not the courier)", sub: "pairwise-mock-mallory-91c2" },
   bob: { name: "Bob (another courier)", sub: "pairwise-mock-bob-44d0" },
+  owner: { name: "Household owner", sub: "pairwise-mock-owner-2b19" },
 };
 
 const decisions = new Map<string, PollResult>();

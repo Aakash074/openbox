@@ -18,8 +18,11 @@ export type PollResult =
   | { status: "verified"; iss: string; sub: string; authTime: number; acr?: string }
   | { status: "denied" | "expired" | "failed"; reason: string };
 
-/** Extra context: for a handover, the World ID (session) bound to the order at dispatch. */
-export type StartContext = { sessionId?: string };
+/**
+ * Extra context: for a handover, the World ID (session) bound to the order at dispatch;
+ * for an Agent Pass checkpoint, the subject already linked to the household (World then rejects anyone else).
+ */
+export type StartContext = { sessionId?: string; sub?: string };
 
 export interface HumanVerifier {
   readonly kind: "mock" | "agentpass" | "idkit";

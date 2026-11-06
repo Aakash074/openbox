@@ -12,9 +12,9 @@ import { startWebhookWorker } from "./webhooks";
 import { createSession, merchantByPk, merchantBySk, merchantById, pay, prepare, sessionView, type Merchant } from "./checkout";
 import { demoFund, depositRefundPool, exportCsv, FINANCE_EVENTS, merchantOrders, orderView, pack, refundPool, scan, tokenInfo, usdtBalance } from "./ops";
 import { createOffer, financingView, fundOffer, lenderAddress, marketplace, merchantFinanceStats } from "./finance";
-import { cancelRequest, createRequest, getRequest, publicView, startWorldPoller, verifier } from "./world/service";
+import { cancelRequest, checkpointVerifier, createRequest, getRequest, publicView, startWorldPoller, verifier, verifierFor } from "./world/service";
 import { mockComplete, PERSONAS } from "./world/mock";
-import { acceptPartialRefund, discoverInspectors, inspect, lastFrame, startKeeper, topics } from "./agent/household";
+import { discoverInspectors, inspect, lastFrame, startKeeper, topics } from "./agent/household";
 import { policySummary } from "./agent/policy";
 import { PolicyRefusal } from "./agent/x402";
 
@@ -72,7 +72,7 @@ app.get("/health", async () => ({ ok: true }));
 app.get("/v1/config", async () => ({
   chainId: cfg.chainId, rpcUrl: cfg.rpcUrl, explorer: cfg.explorer, deliveryCheckout: deployment.deliveryCheckout,
   accountFactory: deployment.accountFactory, token: await tokenInfo(), gaslessMode: cfg.gaslessMode, demoMode: cfg.demoMode,
-  worldMode: verifier.kind, hederaMode: cfg.agent.hederaMode, inspectionWindowS: Number(cfg.windows.inspection),
+  worldMode: verifier.kind, agentPassMode: checkpointVerifier.kind, hederaMode: cfg.agent.hederaMode, inspectionWindowS: Number(cfg.windows.inspection),
   receivableNote: deployment.receivableNote ?? null,
 }));
 
@@ -110,7 +110,18 @@ app.get("/v1/orders/:ref", async (req) => {
   const { qr: _qr, ...view } = orderView(o);
   return { ...view, receipts: view.receipts.filter((r) => !FINANCE_EVENTS.has(r.event)) }; // seller financing is private
 });
-app.post("/v1/orders/:ref/accept-partial-refund", async (req) => acceptPartialRefund((req.params as { ref: string }).ref));
+/**
+ * Buyer asks the household agent to accept a damaged parcel's partial refund. The agent does not act yet:
+ * it opens a World ID Agent Pass checkpoint, and settles only after the household owner's approval validates.
+ */
+app.post("/v1/orders/:ref/accept-partial-refund", async (req) => {
+  const ref = (req.params as { ref: string }).ref;
+  const o = getOrderByRef(ref);
+  if (!o?.pending_verdict_json) throw Object.assign(new Error("No partial refund is waiting for approval."), { statusCode: 409 });
+  const open = db.prepare("SELECT id FROM world_requests WHERE purpose = 'approve_refund' AND order_ref = ? AND status IN ('creating','pending','validating','verified') ORDER BY started_at DESC LIMIT 1").get(ref) as { id: string } | undefined;
+  const approval = open ? publicView(getRequest(open.id)!) : await createRequest("approve_refund", { orderRef: ref });
+  return { approval };
+});
 app.post("/v1/orders/:ref/cancel-undelivered", async (req) => {
   const o = getOrderByRef((req.params as { ref: string }).ref);
   if (!o) throw new Error("unknown order");
@@ -168,9 +179,9 @@ app.get("/v1/world/requests/:id", async (req) => {
 app.post("/v1/world/requests/:id/cancel", async (req) => cancelRequest((req.params as { id: string }).id));
 app.get("/v1/world/mock/personas", async () => ({ enabled: verifier.kind === "mock", personas: PERSONAS }));
 app.post("/v1/world/mock/complete", async (req) => {
-  if (verifier.kind !== "mock") throw new Error("mock disabled");
   const b = z.object({ requestId: z.string(), persona: z.string(), decision: z.enum(["approve", "deny"]) }).parse(req.body);
   const r = getRequest(b.requestId);
+  if (!r || verifierFor(r.purpose).kind !== "mock") throw new Error("mock disabled");
   if (!r || r.status !== "pending") throw new Error(`request is ${r?.status ?? "missing"}`);
   mockComplete(b.requestId, b.persona, b.decision);
   return { ok: true };

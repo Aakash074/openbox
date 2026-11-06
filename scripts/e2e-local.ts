@@ -135,9 +135,18 @@ async function main() {
   const inspC = await api("POST", "/v1/doorbell/inspect", { ref: C.ref, frame: frame({ serial: "SN-LT11-3304-0019", damage: "minor", item: "tablet, cracked" }), mode: "delivery" });
   ok(inspC.action === "awaiting_buyer" && inspC.result.refundBps === 1500, "verdict: damaged, 15% partial refund offered");
   const bc = await bal(buyer.address);
-  await api("POST", `/v1/orders/${C.ref}/accept-partial-refund`);
+  // World ID Agent Pass checkpoint: the agent pauses until the household owner approves.
+  const denyReq = (await api("POST", `/v1/orders/${C.ref}/accept-partial-refund`)).approval;
+  ok(denyReq.status === "pending", "agent paused for a World ID Agent Pass approval");
+  await api("POST", "/v1/world/mock/complete", { requestId: denyReq.id, persona: "owner", decision: "deny" });
+  ok((await waitReq(denyReq.id, ["denied", "refunded", "failed"])).status === "denied", "owner declined: the agent did nothing");
+  ok((await bal(buyer.address)) === bc, "no refund without approval");
+  const okReq = (await api("POST", `/v1/orders/${C.ref}/accept-partial-refund`)).approval;
+  await api("POST", "/v1/world/mock/complete", { requestId: okReq.id, persona: "owner", decision: "approve" });
+  const approved = await waitReq(okReq.id, ["refunded", "failed", "denied", "wrong_person"], 60000);
+  ok(approved.status === "refunded" && !!approved.txHash, "owner approved with World ID: agent settled the partial refund");
   const share = C.amount - C.fee;
-  ok(Math.abs((await bal(buyer.address)) - bc - share * 0.15) < 1e-6, `buyer one-tap partial refund ${share * 0.15} USDT`);
+  ok(Math.abs((await bal(buyer.address)) - bc - share * 0.15) < 1e-6, `buyer partial refund ${share * 0.15} USDT`);
 
   // -------------------------------------------------------------------------- returns
   console.log("Return of B (serial-checked, refund pool)");

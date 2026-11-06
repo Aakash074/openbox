@@ -85,7 +85,14 @@ export const cfg = {
     issuer: env("WORLD_ISSUER", "https://auth.world.org"),
     clientId: process.env.WORLD_CLIENT_ID,
     clientSecret: process.env.WORLD_CLIENT_SECRET,
-    acrValues: env("WORLD_ACR_VALUES", "https://world.org/oidc/acr/orb https://world.org/oidc/acr/orb-face"),
+    // World ID Agent Pass (auth.world.org OIDC device flow) gates the household agent's money actions.
+    // Defaults to the real IdP when a client is configured, otherwise the mock personas.
+    agentPassMode: (process.env.WORLD_AGENT_PASS_MODE ??
+      (process.env.WORLD_CLIENT_ID && process.env.WORLD_CLIENT_SECRET ? "agentpass" : "mock")) as "agentpass" | "mock",
+    // Essential ID-token acr classes: Orb or Selfie Check. Use the -face variants to force a fresh face check.
+    acrClasses: env("WORLD_ACR_CLASSES", "https://world.org/oidc/acr/orb https://world.org/oidc/acr/selfie")
+      .split(/\s+/).filter(Boolean),
+    tokenAuth: env("WORLD_TOKEN_AUTH", "basic") as "basic" | "post", // client_secret_basic (World's default) or _post
     requestTtlS: num("WORLD_REQUEST_TTL_S", 300),
     // IDKit (World ID 4.0) — values from developer.world.org. Signing key stays server-side.
     appId: process.env.WORLD_APP_ID,
