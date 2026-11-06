@@ -78,7 +78,7 @@ const done = await waitReq(ap.id, ["refunded", "denied", "expired", "cancelled",
 console.log(`   approval: ${done.status}${done.reason ? ` (${done.reason})` : ""}`);
 for (const t of done.timeline ?? []) console.log(`     · ${t.status}${t.note ? `: ${t.note}` : ""}`);
 if (done.status !== "refunded") throw new Error("no refund settled");
-tx("settle (damaged, partial refund approved with World ID)", done.txHash);
+tx(process.env.SIMULATE === "1" ? "settle (damaged, partial refund, simulated approval: no World ID proof)" : "settle (damaged, partial refund approved with World ID)", done.txHash);
 console.log(`   buyer +${((await bal(buyer.address)) - b0).toFixed(2)} USDT`);
 
 console.log("\nREADME links:");
