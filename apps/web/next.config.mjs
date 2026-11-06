@@ -5,6 +5,8 @@ config({ path: resolve(process.cwd(), "../..", process.env.OPENBOX_ENV_FILE ?? "
 
 /** @type {import('next').NextConfig} */
 export default {
+  // No dev-tools badge over the UI in demo recordings.
+  devIndicators: false,
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000",
     NEXT_PUBLIC_STORE_URL: process.env.NEXT_PUBLIC_STORE_URL ?? "http://localhost:5174",
