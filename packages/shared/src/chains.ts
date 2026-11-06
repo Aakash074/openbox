@@ -35,6 +35,17 @@ export function explorerTx(chainId: number, hash: string, explorer?: string) {
   return `${(explorer ?? whitechainSepolia.blockExplorers.default.url).replace(/\/$/, "")}/tx/${hash}`;
 }
 
+/** Explorer page of one ERC-721 token (e.g. a receivable note). Local chains return a local:// placeholder. */
+export function explorerToken(chainId: number, contract: string, tokenId: bigint | string, explorer?: string) {
+  if (chainId !== 1874) return `local://token/${contract}/${tokenId}`;
+  return `${(explorer ?? whitechainSepolia.blockExplorers.default.url).replace(/\/$/, "")}/token/${contract}/instance/${BigInt(tokenId).toString()}`;
+}
+
+export function explorerAddress(chainId: number, address: string, explorer?: string) {
+  if (chainId !== 1874) return `local://address/${address}`;
+  return `${(explorer ?? whitechainSepolia.blockExplorers.default.url).replace(/\/$/, "")}/address/${address}`;
+}
+
 export function hashscanTx(txId: string, network = "testnet") {
   return `https://hashscan.io/${network}/transaction/${encodeURIComponent(txId)}`;
 }

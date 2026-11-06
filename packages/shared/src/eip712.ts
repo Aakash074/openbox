@@ -3,6 +3,10 @@ import type { Address, Hex } from "viem";
 export const openBoxDomain = (chainId: number, verifyingContract: Address) =>
   ({ name: "OpenBox", version: "1", chainId, verifyingContract }) as const;
 
+/** EIP-712 domain of the deployed ReceivableNote (seller's FinanceOffer). */
+export const receivableNoteDomain = (chainId: number, verifyingContract: Address) =>
+  ({ name: "OpenBox Receivable", version: "1", chainId, verifyingContract }) as const;
+
 export const accountDomain = (chainId: number, verifyingContract: Address) =>
   ({ name: "OpenBoxAccount", version: "1", chainId, verifyingContract }) as const;
 
@@ -58,6 +62,16 @@ export const lockPayoutTypes = {
   LockPayout: [
     { name: "orderId", type: "bytes32" },
     { name: "financier", type: "address" },
+    { name: "deadline", type: "uint256" },
+  ],
+} as const;
+
+/** Seller's price for selling an order's receivable: signed on the ReceivableNote domain. */
+export const financeOfferTypes = {
+  FinanceOffer: [
+    { name: "orderId", type: "bytes32" },
+    { name: "advance", type: "uint256" },
+    { name: "holdback", type: "uint256" },
     { name: "deadline", type: "uint256" },
   ],
 } as const;
@@ -140,6 +154,8 @@ export type Verdict = {
   hcsSeq: bigint;
   deadline: bigint;
 };
+export type FinanceOffer = { orderId: Hex; advance: bigint; holdback: bigint; deadline: bigint };
+export type LockPayout = { orderId: Hex; financier: Address; deadline: bigint };
 export type ReturnVerdict = {
   orderId: Hex;
   returnedSerialHash: Hex;

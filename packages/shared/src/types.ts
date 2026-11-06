@@ -47,6 +47,8 @@ export const WEBHOOK_EVENTS = [
   "order.timeout_released",
   "order.return_refunded",
   "order.cancelled",
+  "invoice.funded",
+  "invoice.closed",
 ] as const;
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
 
