@@ -18,6 +18,7 @@ OpenBox was built by **Aakash Kumar**, using **Claude Code** (Anthropic) as an A
 - **Research.** Read the partner docs (World, Hedera x402, Whitechain) and summarised them.
 - **Reviews.** Ran independent review passes on the UI and on track requirements, then fixed what they found.
 - **Operations.** Ran deployments, contract verification and testnet scripts, under Aakash's direction.
+- **Demo video.** The narrator in the demo video is a HeyGen AI avatar of Aakash, made from his own recording and voice. The screen footage is a real, unedited-speed recording of the live app on testnet, including Aakash's real World ID approval.
 
 ## How we kept it honest
 
