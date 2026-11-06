@@ -75,7 +75,17 @@ export function merchantOrders(m: Merchant) {
 export function orderView(o: NonNullable<ReturnType<typeof getOrderByRef>>) {
   const events = db.prepare("SELECT tx_hash, name, ts, data_json FROM chain_events WHERE order_id = ? ORDER BY block, log_index").all(o.order_id) as
     { tx_hash: string; name: string; ts: number; data_json: string }[];
+  // Deadlines from the signed terms (stored on-chain at payment) and indexed block times:
+  // decision = handoverAt + inspectionWindow (after it, the keeper's timeoutRelease pays the seller in full);
+  // return = settledAt + returnWindow (serial-checked return refunds the seller's share from the refund pool).
+  const terms = JSON.parse(o.terms_json) as { inspectionWindow?: string; returnWindow?: string };
+  const evTs = (n: string) => events.find((e) => e.name === n)?.ts;
+  const handoverAt = evTs("HandedOver"), settledAt = evTs("Settled");
+  const inspectionWindowS = Number(terms.inspectionWindow ?? 0), returnWindowS = Number(terms.returnWindow ?? 0);
   return {
+    decisionDeadline: o.pending_verdict_json && handoverAt ? handoverAt + inspectionWindowS : null,
+    returnDeadline: settledAt && o.status === "settled" && returnWindowS ? settledAt + returnWindowS : null,
+    returnWindowS: returnWindowS || null,
     ref: o.ref, orderId: o.order_id, product: o.product, status: o.status, outcome: o.outcome,
     amount: usdt(o.amount), courierFee: usdt(o.courier_fee), buyer: o.buyer, seller: o.seller,
     courier: o.courier_name, courierPayout: o.courier_payout, serial: o.serial, qr: o.qr,
