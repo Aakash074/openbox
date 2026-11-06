@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Top } from "../components/Top";
 import {
   Badge, Callout, Dialog, EmptyState, ExtLink, Hash, Icon, Money, PageHeader, Skeleton, SkeletonRows, Tabs, Timestamp, fmtAmount, hasAmount,
@@ -46,10 +47,16 @@ function useClock(ms = 30000) {
   return t;
 }
 
-export default function Lender() {
+function Lender() {
   const tick = useEvents();
   const [m, reload, err] = usePoll<Market>(() => lender("GET", "marketplace"), [tick], 15000);
-  const [view, setView] = useState<View>("available");
+  // The view lives in the URL so the lender nav (Marketplace · Active · Closed) and the tabs stay in step.
+  const params = useSearchParams();
+  const router = useRouter();
+  const path = usePathname();
+  const q = params.get("view");
+  const view: View = q === "active" || q === "closed" ? q : "available";
+  const setView = (v: View) => router.replace(v === "available" ? path : `${path}?view=${v}`, { scroll: false });
   const [confirm, setConfirm] = useState<Offer>();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string>();
@@ -74,7 +81,7 @@ export default function Lender() {
   const disabled = m && !m.enabled;
   return (
     <>
-      <Top account="Demo lender" />
+      <Top role="lender" current={view === "available" ? "/lender" : `/lender?view=${view}`} />
       <main className="page">
         <PageHeader
           title="Receivables"
@@ -379,4 +386,8 @@ function Notes({ rows, loading, kind }: { rows?: Offer[]; loading: boolean; kind
       </ul>
     </>
   );
+}
+
+export default function Page() {
+  return <Suspense><Lender /></Suspense>;
 }

@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { use, type ReactNode } from "react";
 import { MiniTop } from "../../components/Top";
 import {
@@ -224,7 +225,7 @@ export default function Buyer({ params }: { params: Promise<{ ref: string }> }) 
                 )}
               </Card>
             </div>
-            <p className="xs muted" style={{ textAlign: "center" }}>Questions about your order? Contact {storeName}.</p>
+            <p className="xs muted" style={{ textAlign: "center" }}>Questions about your order? Contact {storeName}.<br />Delivered to your doorbell? <Link href="/home">Open the household app</Link></p>
           </div>
         )}
       </main>

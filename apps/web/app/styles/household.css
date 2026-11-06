@@ -1,0 +1,73 @@
+/* Household app (/home): the buyer's home, its doorbell agent and the owner's World ID approvals. Shares .m-* table/list pieces with merchant.css. */
+
+/* status strip: agent spend · owner link · pending approvals */
+.h-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: hidden; }
+.h-cell { display: flex; align-items: center; gap: 12px; padding: 14px 20px; min-width: 0; color: var(--text); transition: background-color var(--dur-1) var(--ease-standard); }
+.h-cell + .h-cell { border-left: 1px solid var(--border); }
+.h-cell:hover { background: var(--surface-3); text-decoration: none; }
+.h-cell:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+.h-cell > .icon { color: var(--text-3); }
+.h-cell .grow { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.h-cell .lbl { font-size: 12px; color: var(--text-3); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-cell .val { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-cell .val .cur { font-size: 12px; font-weight: 500; color: var(--text-3); }
+.h-cell .ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--surface-2); color: var(--text-2); flex: none; }
+.h-cell .ic.agent { background: #FEF6E7; color: #B54708; }
+.h-cell .ic.owner { background: var(--proof-bg); color: var(--proof-700); }
+.h-cell .ic.attn { background: var(--brand-700); color: #fff; }
+.h-bar { display: block; height: 4px; border-radius: 999px; background: var(--surface-2); overflow: hidden; max-width: 200px; }
+.h-bar > span { display: block; height: 100%; background: #DC6803; border-radius: 999px; }
+@media (max-width: 1023px) { .h-strip { grid-template-columns: minmax(0, 1fr); } .h-cell + .h-cell { border-left: 0; border-top: 1px solid var(--border); } }
+
+/* a refund waiting for the owner */
+.h-attn { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: var(--r-card); border: 1px solid #F9DBA6; background: #FFFAEB; }
+.h-attn .ic { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; background: #DC6803; color: #fff; flex: none; }
+.h-attn .t { font-weight: 600; }
+.h-attn .b { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+@media (max-width: 639px) { .h-attn { flex-wrap: wrap; align-items: flex-start; } .h-attn .grow { flex: 1 1 calc(100% - 44px); } .h-attn .btn { margin-left: 44px; } }
+
+/* deliveries */
+.h-orders table.data td { height: 60px; }
+.h-refund { display: inline-flex; flex-direction: column; align-items: flex-end; }
+.h-list > li { padding: 0; }
+.h-li { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; color: var(--text); }
+.h-li:hover { background: var(--surface-3); text-decoration: none; }
+.h-li > .icon { color: var(--text-3); align-self: center; }
+.h-li .top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; min-width: 0; }
+.h-li .prod { font-weight: 500; }
+.h-back { color: var(--info, #175CD3); font-weight: 600; white-space: nowrap; }
+.h-foot { display: flex; align-items: center; gap: 6px; margin-bottom: 0; }
+
+/* agent */
+.h-agent-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 32px; align-items: center; padding: 28px; }
+.h-agent-hero h2 { font-size: 20px; line-height: 28px; margin: 6px 0 8px; }
+.h-agent-hero p { margin: 0; color: var(--text-2); }
+.h-flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; counter-reset: none; }
+.h-flow li { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 10px; background: var(--surface-3); border: 1px solid var(--border); font-size: 12px; color: var(--text-3); line-height: 16px; }
+.h-flow li b { display: block; font-size: 13px; color: var(--text); margin-bottom: 2px; line-height: 18px; }
+.h-flow .n { width: 24px; height: 24px; border-radius: 999px; display: grid; place-items: center; background: #FEF6E7; color: #B54708; font-weight: 700; font-size: 12px; }
+@media (max-width: 1023px) { .h-agent-hero { grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 20px; } }
+@media (max-width: 639px) { .h-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.h-insp { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.h-insp li { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: var(--r-ctl); }
+.h-insp li.off { background: var(--surface-3); }
+.h-insp li b { font-weight: 600; font-size: 14px; }
+.h-insp .avatar { width: 32px; height: 32px; border-radius: 8px; font-size: 12px; }
+
+/* the approval rule */
+.h-rule { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-radius: var(--r-card); background: linear-gradient(135deg, var(--proof-bg), #F8FAFC 70%); border: 1px solid var(--proof-bd); }
+.h-rule .ic { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--proof-700); color: #fff; flex: none; align-self: flex-start; }
+.h-rule .ic .icon { width: 20px; height: 20px; }
+.h-rule b { font-size: 15px; }
+.h-rule p { margin: 4px 0 0; font-size: 14px; color: var(--text-2); }
+@media (max-width: 639px) { .h-rule { flex-wrap: wrap; padding: 16px; } .h-rule > .grow { flex: 1 1 calc(100% - 54px); } .h-rule > .btn { margin-left: 54px; } }
+
+/* approvals */
+.h-appr > li { padding: 14px 24px; }
+.h-appr-row { display: flex; align-items: center; gap: 12px; }
+.h-appr-t { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.h-owner { display: flex; align-items: center; gap: 14px; }
+.h-owner b { font-size: 16px; }
+.h-owner-art { flex: none; width: 64px; height: 64px; }
+@media (max-width: 639px) { .h-appr > li { padding: 12px 16px; } .h-appr-row { flex-wrap: wrap; align-items: flex-start; } .h-appr-row > .grow { flex: 1 1 calc(100% - 52px); } .h-appr-row > .btn { margin-left: 52px; } .h-past .h-appr-row { flex-wrap: nowrap; } .h-past .h-appr-row > .grow { flex: 1 1 auto; } }
+.h-past > li { padding: 14px 16px; }

@@ -145,8 +145,9 @@ export default function Demo() {
           <p>It plays the shop, the doorbell and the merchant dashboard side by side, with live balances on top. Open it in a window at least 1280px wide, or try each part on its own:</p>
           <div className="dm-narrow-links">
             <a href={store} target="_blank" rel="noreferrer"><Icon name="store" /><span><b>Shop</b><small>Northwind Gadgets, the demo store</small></span><Icon name="external" /></a>
+            <a href="/home"><Icon name="home" /><span><b>Household app</b><small>Deliveries, the doorbell agent and approvals</small></span><Icon name="chevron-right" /></a>
             <a href="/kiosk"><Icon name="doorbell" /><span><b>Doorbell</b><small>Scan a parcel at the door</small></span><Icon name="chevron-right" /></a>
-            <a href="/merchant"><Icon name="package" /><span><b>Merchant dashboard</b><small>Orders, payouts and receipts</small></span><Icon name="chevron-right" /></a>
+            <a href="/merchant"><Icon name="package" /><span><b>Merchant app</b><small>Orders, payouts and verdicts</small></span><Icon name="chevron-right" /></a>
           </div>
         </div>
       </main>
@@ -159,7 +160,7 @@ export default function Demo() {
         {wide && (
           <div className="dm-panes">
             <Pane title="Shop" role="Buyer · Northwind Gadgets" src={`${store}/?embed=1`} icon="store" />
-            <Pane title="Doorbell" role="Buyer's front door" src="/kiosk?embed=1" allow="camera" icon="doorbell" />
+            <Pane title="Doorbell" role="Mehta household · front door" src="/kiosk?embed=1" allow="camera" icon="doorbell" />
             <Pane title="Merchant" role="OpenBox dashboard" src="/merchant?embed=1" icon="package" />
           </div>
         )}

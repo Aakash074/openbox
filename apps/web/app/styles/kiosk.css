@@ -139,3 +139,4 @@ html[data-embed] .kiosk .cam .hint { font-size: 16px; padding: 18px 12px 10px; }
 }
 .ra-kiosk + .dl { padding-top: 8px; border-top: 1px solid var(--night-3); }
 @media (prefers-reduced-motion: reduce) { .kiosk .draw-ring, .kiosk .draw-tick { animation-delay: 0s !important; } }
+html[data-embed] .k-back { display: none; }

@@ -7,6 +7,7 @@ import { api, useEvents, usePoll, type ObEvent } from "../lib/api";
 import { APPROVAL_LABEL, RefundApproval } from "../components/approval";
 import { Inspection, Parcel, ProductArt, VerdictCheck } from "../components/art";
 import { prefersReducedMotion } from "../components/motion";
+import { HOUSEHOLD_NAME } from "../components/roles";
 import "../styles/kiosk.css";
 
 type Step = "scan" | "courier" | "open" | "verdict";
@@ -217,8 +218,9 @@ export default function Kiosk() {
   return (
     <div className="kiosk">
       <header className="kiosk-top">
-        <div className="row" style={{ gap: 12, flexWrap: "nowrap", minWidth: 0 }}><Brand href="/kiosk" /><span className="muted small truncate">Doorbell · Front door</span></div>
+        <div className="row" style={{ gap: 12, flexWrap: "nowrap", minWidth: 0 }}><Brand href="/kiosk" /><span className="muted small truncate">Doorbell · Front door · {HOUSEHOLD_NAME}</span></div>
         <div className="row" style={{ gap: 8, flexWrap: "nowrap" }}>
+          <a className="btn ghost sm k-back" href="/home" aria-label="Back to the household app"><Icon name="home" /><span className="hide-sm">Household app</span></a>
           {camOn && <span className="hide-sm"><Badge tone="success" live>Camera live</Badge></span>}
           <Badge tone="neutral" title="Whitechain testnet · World ID · Hedera testnet">Testnet</Badge>
         </div>

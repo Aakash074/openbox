@@ -14,10 +14,10 @@ const STEPS: { title: string; body: string; art: ReactNode; tag: string; note?: 
 ];
 
 const ROLES: { role: Role; title: string; body: string; href: string; cta: string; external?: boolean }[] = [
-  { role: "merchant", title: "Merchants", body: "Pack, dispatch and track every order. Webhooks, receipts and a CSV for your accountant.", href: "/merchant", cta: "Open the dashboard" },
-  { role: "buyer", title: "Buyers", body: "Pay like any checkout. Get the money back if the box doesn't hold what you ordered.", href: "STORE", cta: "Shop the demo store", external: true },
-  { role: "courier", title: "Couriers", body: "Get paid for an honest handover, even when the seller shipped the wrong item.", href: "/courier", cta: "See the courier check" },
-  { role: "lender", title: "Lenders", body: "Buy paid orders as receivable notes. Repaid automatically at verified delivery.", href: "/lender", cta: "Browse receivables" },
+  { role: "merchant", title: "Merchants", body: "Pack, dispatch and track every order, see each verdict, and get paid early on orders in transit.", href: "/merchant", cta: "Open the merchant app" },
+  { role: "buyer", title: "Households", body: "Your doorbell agent checks every parcel and pays the inspector. Refunds for damage wait for your World ID approval.", href: "/home", cta: "Open the household app" },
+  { role: "courier", title: "Couriers", body: "Get paid for an honest handover, even when the seller shipped the wrong item.", href: "/courier", cta: "Open the courier app" },
+  { role: "lender", title: "Lenders", body: "Buy paid orders as receivable notes. Repaid automatically at verified delivery.", href: "/lender", cta: "Open the lender desk" },
 ];
 
 const TRUST: [IconName, string][] = [["coins", "USDT on Whitechain"], ["user-check", "World ID"], ["shield-check", "Audit log on Hedera"]];
@@ -52,7 +52,7 @@ export default function Home() {
           </nav>
           <div className="lp-nav-right">
             <a className="lp-ghost hide-sm" href={store} target="_blank" rel="noreferrer">Demo store <Icon name="external" /></a>
-            <Link className="btn sm lp-btn-glass" href="/merchant">Open dashboard</Link>
+            <Link className="btn sm lp-btn-glass" href="/merchant">Open the apps</Link>
           </div>
         </header>
 
@@ -182,7 +182,7 @@ export default function Home() {
           </div>
           <nav className="lp-foot-cols" aria-label="Footer">
             <div><h4>Try it</h4><Link href="/demo">Live demo</Link><a href={store} target="_blank" rel="noreferrer">Demo store</a><Link href="/kiosk">Doorbell screen</Link></div>
-            <div><h4>Dashboards</h4><Link href="/merchant">Merchant</Link><Link href="/courier">Courier</Link><Link href="/lender">Lender</Link></div>
+            <div><h4>Role apps</h4><Link href="/merchant">Merchant</Link><Link href="/home">Household</Link><Link href="/courier">Courier</Link><Link href="/lender">Lender</Link></div>
           </nav>
         </div>
         <div className="lp-foot-base">

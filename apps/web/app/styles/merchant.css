@@ -161,3 +161,25 @@
 
 /* verifier round 2: readable muted text on the selected row; room for the copy button over code */
 tr.selected .muted, tr.selected .xs, tr.selected .small { color: var(--text-2); }
+
+/* get paid early */
+.m-adv-how { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 32px; align-items: center; padding: 28px; }
+.m-adv-how h2 { font-size: 20px; line-height: 28px; margin: 6px 0 8px; }
+.m-adv-how p { color: var(--text-2); margin: 0; }
+.m-adv-how ul { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 10px; }
+.m-adv-how li { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--text-2); }
+.m-adv-how li .icon { color: var(--brand-600); margin-top: 2px; }
+.m-adv-how .adv-art { margin: 0; }
+@media (max-width: 1023px) { .m-adv-how { grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 20px; } }
+.m-adv-list > li { padding: 14px 24px; }
+.m-adv-row { display: flex; align-items: center; gap: 12px; }
+.m-adv-t { display: flex; gap: 8px; align-items: baseline; min-width: 0; font-weight: 500; }
+.m-adv-t .mono { font-size: 13px; flex: none; }
+.m-adv-row .badges { align-items: center; }
+.mt-4 { margin-top: 4px; }
+.m-adv-off { width: 100%; max-width: 420px; }
+@media (max-width: 639px) { .m-adv-list > li { padding: 12px 16px; } }
+/* inspections */
+.m-insp-note { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: var(--r-card); background: var(--surface); border: 1px solid var(--border); }
+.m-insp-note .ic { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; background: #FEF6E7; color: #B54708; flex: none; }
+.m-insp-note p { margin: 0; font-size: 14px; color: var(--text-2); align-self: center; }

@@ -3,6 +3,7 @@ import { useState, type ReactNode } from "react";
 import { merchant, usePoll } from "../lib/api";
 import { Badge, Callout, ExtLink, Hash, Icon, Money, Skeleton, Timestamp, fmtAmount } from "./ui";
 import { ReceivableFlow } from "./art";
+import { LENDER_NAME } from "./roles";
 
 /** Delivery stage of the order behind a receivable, in lender terms. */
 const DELIVERY: Record<string, [string, "info" | "warning" | "success" | "neutral" | "danger"]> = {
@@ -25,8 +26,6 @@ export function timeLeft(deadline: number, nowS = Math.floor(Date.now() / 1000))
   return h ? `in ${h}h ${m}m` : `in ${m}m`;
 }
 
-/** Display name of the lender for merchants (the address stays in the tooltip and explorer link). */
-const LENDER_NAME = process.env.NEXT_PUBLIC_LENDER_NAME ?? "Demo lender";
 const pctText = (n?: number) => `${Number(n ?? 0).toLocaleString("en-US", { maximumFractionDigits: 2 })}%`;
 
 const OUTCOME: Record<string, string> = { mismatch: "wrong item", damaged: "item damaged", timeout: "not delivered in time" };

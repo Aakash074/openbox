@@ -695,3 +695,54 @@ tr.flash { animation: none; }
   .art.rf-h { display: none !important; }
   .art.rf-v { display: block !important; min-width: 0 !important; width: 100%; max-width: 360px; margin: 0 auto; }
 }
+
+/* ─── role apps: per-role nav + demo "Viewing as" switcher ─────────────────────────────── */
+.brand-wrap { display: inline-flex; align-items: center; gap: 10px; flex: none; }
+.app-role { font-size: 12px; font-weight: 600; line-height: 20px; padding: 0 8px; border-radius: 999px; color: var(--text-2); background: var(--surface-2); border: 1px solid var(--border); white-space: nowrap; }
+.app-role.merchant { color: #0B5E57; background: #E6F4F1; border-color: #B7E1D9; }
+.app-role.household { color: #8A4B08; background: #FEF6E7; border-color: #F9DBA6; }
+.app-role.courier { color: #1849A9; background: #EFF6FF; border-color: #C3D9FB; }
+.app-role.lender { color: #5B2DA8; background: #F4F0FE; border-color: #D9CCFB; }
+.role-switch { position: relative; }
+.role-switch > .account { cursor: pointer; font: inherit; font-size: 13px; font-weight: 500; transition: border-color var(--dur-1) var(--ease-standard), background-color var(--dur-1) var(--ease-standard); }
+.role-switch > .account:hover { border-color: var(--border-strong); background: var(--surface-3); }
+.role-switch > .account:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.role-switch > .account > .icon { color: var(--text-3); width: 14px; height: 14px; }
+.acct-name { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.avatar.role-av.merchant, .role-ic.merchant { background: var(--brand-700); }
+.avatar.role-av.household, .role-ic.household { background: #B54708; }
+.avatar.role-av.courier, .role-ic.courier { background: #175CD3; }
+.avatar.role-av.lender, .role-ic.lender { background: #6941C6; }
+.role-pop { position: absolute; right: 0; top: calc(100% + 8px); width: 300px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-card); box-shadow: var(--shadow-lg); padding: 8px; z-index: 40; animation: role-pop-in var(--dur-2) var(--ease-decel); }
+@keyframes role-pop-in { from { opacity: 0; transform: translateY(-4px); } }
+.role-pop-h { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 8px; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); }
+.role-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.role-list a { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: var(--r-ctl); color: var(--text); }
+.role-list a:hover { background: var(--surface-2); text-decoration: none; }
+.role-list a.on { background: var(--brand-50); }
+.role-list a > .icon { color: var(--brand-700); }
+.role-list b { display: block; font-size: 14px; font-weight: 600; line-height: 20px; }
+.role-list small { display: block; font-size: 12px; color: var(--text-3); line-height: 16px; }
+.role-ic { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: #fff; flex: none; }
+.role-ic .icon { width: 16px; height: 16px; }
+.role-pop-f { display: flex; gap: 4px; border-top: 1px solid var(--border); margin-top: 8px; padding-top: 8px; }
+.role-pop-f a { display: inline-flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: var(--r-ctl); font-size: 13px; font-weight: 500; color: var(--text-2); }
+.role-pop-f a:hover { background: var(--surface-2); color: var(--text); text-decoration: none; }
+.mobile-roles { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 4px; }
+@media (max-width: 1023px) {
+  .role-switch { display: none; }
+  .mobile-nav .role-list a { padding: 8px 12px; }
+  .mobile-nav .role-list a[aria-current] { background: var(--brand-50); color: var(--text); }
+}
+@media (max-width: 380px) { .app-top .badge { display: none; } }
+@media (prefers-reduced-motion: reduce) { .role-pop { animation: none; } }
+/* four count/amount tiles in one card: 4 across, 2×2 on phones */
+.kpi-group.grid4 > .kpi { padding: 18px 20px 16px; min-width: 0; }
+.kpi-group.grid4 .kpi-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 639px) {
+  .kpi-group.grid4 { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--border); overflow: hidden; }
+  .kpi-group.grid4 > .kpi { background: var(--surface); padding: 14px 16px; }
+  .kpi-group.grid4 > .kpi + .kpi { border: 0; }
+  .kpi-group.grid4 .kpi-value { font-size: 24px; line-height: 32px; }
+}
+.role-pop-h .badge { text-transform: none; letter-spacing: 0; font-weight: 500; }

@@ -1,7 +1,7 @@
 "use client";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { MiniTop } from "../components/Top";
+import { Top } from "../components/Top";
 import { Badge, Callout, EmptyState, Icon, Skeleton, StatusBadge, Stepper, Timestamp, fmtAmount, type StepState } from "../components/ui";
 import { api, usePoll } from "../lib/api";
 import { APPROVAL_LABEL, APPROVAL_OPEN, ApprovalTimeline, CountdownRing, DemoApprover, approvalTone, hhmm, inText, useNow } from "../components/approval";
@@ -55,9 +55,7 @@ function Courier() {
   // Mock mode: the courier named on the request is the one primary choice; the others demo a wrong-courier attempt.
   const assigned = PERSONAS.find((p) => p.name.toLowerCase() === String(r?.courierName ?? "").toLowerCase()) ?? PERSONAS[0];
   const others = PERSONAS.filter((p) => p.id !== assigned.id);
-  const top = (
-    <MiniTop width={WIDTH} left={<span className="row" style={{ gap: 8, flexWrap: "nowrap" }}><Icon name="truck" /><span className="store truncate">Courier check{r?.orderRef ? <span className="muted hide-sm" style={{ fontWeight: 400 }}> · <span className="mono">{r.orderRef}</span></span> : null}</span></span>} />
-  );
+  const top = <Top role="courier" />;
 
   return (
     <>
@@ -194,7 +192,7 @@ function HouseholdApproval({ r, reload }: { r: any; reload: () => void }) {
   const ok = r.status === "refunded" || r.status === "verified";
   return (
     <>
-      <MiniTop width={WIDTH} left={<span className="row" style={{ gap: 8, flexWrap: "nowrap" }}><Icon name="shield" /><span className="store nowrap">Approval <span className="muted hide-sm" style={{ fontWeight: 400 }}>· <span className="mono">{r.orderRef}</span></span></span></span>} />
+      <Top role="household" current="/home/approvals" />
       <main className="page lg-type courier" style={{ maxWidth: WIDTH }}>
         <div className="stack-24">
           <div>
