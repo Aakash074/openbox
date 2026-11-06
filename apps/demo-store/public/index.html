@@ -3,60 +3,171 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Northwind Gadgets</title>
+  <title>Northwind Gadgets · Phones, audio and tablets</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231E2A4A'/%3E%3Cpath d='M9 23V9l14 14V9' fill='none' stroke='%23F5B544' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
   <style>
-    :root { --ink:#0f172a; --mut:#64748b; --line:#e2e8f0; }
+    :root { --ink:#141A2E; --mut:#5B6478; --line:#E6E8EE; --bg:#FAFAF7; --navy:#1E2A4A; --amber:#F5B544; --amber-ink:#8A5A00; --font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; --mono: ui-monospace, SFMono-Regular, Menlo, monospace; }
     * { box-sizing: border-box; }
-    body { margin:0; font:15px/1.5 system-ui, sans-serif; color:var(--ink); background:#f8fafc; }
-    header { display:flex; align-items:center; justify-content:space-between; padding:14px 28px; background:#fff; border-bottom:1px solid var(--line); }
-    header b { font-size:18px; letter-spacing:-.01em; }
-    header span { color:var(--mut); font-size:13px; }
-    main { display:grid; grid-template-columns: 1fr 360px; gap:24px; padding:24px 28px; max-width:1200px; margin:0 auto; }
-    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:18px; align-content:start; }
-    .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px; }
-    .img { height:120px; border-radius:8px; background:linear-gradient(135deg,#e0f2fe,#f1f5f9); display:grid; place-items:center; font-size:42px; margin-bottom:10px; }
-    .price { font-weight:700; font-size:18px; margin:2px 0 10px; }
-    aside { display:flex; flex-direction:column; gap:16px; }
-    pre { margin:0; font:12px/1.5 ui-monospace,Menlo,monospace; background:#0f172a; color:#e2e8f0; padding:14px; border-radius:10px; overflow:auto; }
-    h3 { margin:0 0 8px; font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--mut); }
-    #hooks { font:12px/1.45 ui-monospace,Menlo,monospace; max-height:340px; overflow:auto; }
-    #hooks div { padding:6px 0; border-bottom:1px dashed var(--line); }
-    .ok { color:#047857; } .bad { color:#b91c1c; }
+    body { margin:0; font:15px/1.5 var(--font); color:var(--ink); background:var(--bg); -webkit-font-smoothing:antialiased; }
+    a { color: inherit; }
+    :where(a, button, summary):focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; border-radius: 4px; }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    .promo { background: var(--navy); color: #E7EAF3; font-size: 13px; text-align: center; padding: 8px 16px; }
+    .promo b { color: var(--amber); font-weight: 600; }
+    header.site { background:#fff; border-bottom:1px solid var(--line); }
+    header.site .wrap { display:flex; align-items:center; gap:32px; height:64px; }
+    .logo { display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px; letter-spacing:-.01em; text-decoration:none; color:var(--navy); }
+    .logo svg { width:30px; height:30px; }
+    nav.cats { display:flex; gap:24px; font-size:14px; font-weight:500; color:var(--mut); }
+    nav.cats a { text-decoration:none; } nav.cats a:hover { color: var(--ink); }
+    .hdr-right { margin-left:auto; display:flex; align-items:center; gap:8px; }
+    .icon-btn { display:inline-grid; place-items:center; width:40px; height:40px; border-radius:8px; color:var(--ink); position:relative; text-decoration:none; }
+    .icon-btn:hover { background:#F2F3F7; }
+    .icon-btn svg { width:20px; height:20px; }
+    .cart-count { position:absolute; top:4px; right:2px; background:var(--amber); color:var(--ink); font-size:10px; font-weight:700; border-radius:999px; min-width:16px; height:16px; display:grid; place-items:center; }
+    .hero { padding: 40px 0 24px; }
+    .hero h1 { margin:0; font-size:32px; line-height:1.15; letter-spacing:-.02em; color:var(--navy); }
+    .hero p { margin:8px 0 0; color:var(--mut); max-width:560px; }
+    .perks { display:flex; gap:20px; flex-wrap:wrap; margin-top:16px; font-size:13px; color:var(--mut); }
+    .perks span { display:inline-flex; align-items:center; gap:6px; }
+    .perks svg { width:16px; height:16px; color: var(--navy); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:20px; padding-bottom:48px; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; }
+    .img { aspect-ratio: 4/3; display:grid; place-items:center; background: linear-gradient(160deg,#F1F2F6,#E6E8EF); }
+    .img svg { width: 46%; height: auto; }
+    .body { padding:16px 18px 18px; display:flex; flex-direction:column; flex:1; }
+    .tag { font-size:12px; color:var(--mut); font-weight:500; }
+    .name { font-weight:600; font-size:16px; margin-top:2px; }
+    .desc { color:var(--mut); font-size:14px; margin-top:4px; flex:1; }
+    .price-row { display:flex; align-items:baseline; justify-content:space-between; margin:12px 0 12px; }
+    .price { font-weight:700; font-size:20px; font-variant-numeric: tabular-nums; }
+    .price small { font-size:13px; color:var(--mut); font-weight:500; margin-left:3px; }
+    .ship { font-size:12px; color:#1F7A4D; font-weight:500; }
+    .skel { background:#EEF0F4; border-radius:6px; }
+    footer.site { border-top:1px solid var(--line); padding:20px 0; font-size:13px; color:var(--mut); background:#fff; }
+
+    /* developer panel: not part of the shop — shows the integration + webhooks for the demo */
+    body.dev-open { padding-right: 520px; }
+    .dev { position: fixed; top: 0; right: 0; bottom: 0; width: 520px; background:#0D1117; color:#E6EDF3; display:flex; flex-direction:column; border-left:1px solid #222A36; z-index: 20; font-size:13px; }
+    .dev[hidden] { display:none; }
+    .dev-h { display:flex; align-items:center; gap:8px; padding:12px 16px; border-bottom:1px solid #222A36; }
+    .dev-h b { font-weight:600; }
+    .dev-badge { font-size:11px; color:#9AA4B2; border:1px dashed #3B4554; border-radius:999px; padding:1px 8px; }
+    .dev-h button { margin-left:auto; all:unset; cursor:pointer; color:#9AA4B2; padding:4px 8px; border-radius:6px; }
+    .dev-h button:hover { background:#1B222D; color:#fff; }
+    .dev-h button:focus-visible { outline:2px solid #F5B544; }
+    .dev section { padding: 14px 16px; border-bottom:1px solid #222A36; min-height: 0; }
+    .dev section.code { flex: 1.4; overflow:auto; }
+    .dev section.hooks { flex: 1; overflow:auto; }
+    .dev h3 { margin:0 0 8px; font-size:12px; font-weight:600; color:#9AA4B2; display:flex; justify-content:space-between; }
+    .dev pre { margin:0; font:11.5px/1.55 var(--mono); white-space:pre-wrap; overflow-wrap:anywhere; color:#E6EDF3; }
+    #hooks { font:12px/1.5 var(--mono); }
+    #hooks div { display:flex; gap:8px; align-items:baseline; padding:6px 0; border-bottom:1px solid #1B222D; }
+    #hooks .ok { color:#56D364; } #hooks .bad { color:#F85149; }
+    #hooks .ref { color:#9AA4B2; margin-left:auto; white-space:nowrap; }
+    .dev-toggle[aria-expanded="true"] { background:#1E2A4A; color:#fff; }
+    .dev-toggle { border:0; background:transparent; cursor:pointer; font:inherit; }
+
+    @media (max-width: 1200px) {
+      body.dev-open { padding-right: 0; }
+      .dev { width: min(520px, 100vw); box-shadow: -12px 0 32px rgb(0 0 0 / .3); }
+    }
+    @media (max-width: 760px) {
+      nav.cats { display:none; }
+      .wrap { padding: 0 16px; }
+      .hero h1 { font-size: 26px; }
+      .grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
-  <header><b>Northwind Gadgets</b><span>Ships worldwide · Pay on delivery in USDT</span></header>
-  <main>
-    <section class="grid" id="products"></section>
-    <aside>
-      <div class="card"><h3>Our integration (checkout.js)</h3><pre id="src"></pre></div>
-      <div class="card"><h3>Webhooks received by this store</h3><div id="hooks"><span style="color:var(--mut)">waiting…</span></div></div>
-    </aside>
+  <div class="promo"><b>Free shipping</b> worldwide · Pay safely: your payment is held until the parcel is checked at your door</div>
+  <header class="site">
+    <div class="wrap">
+      <a class="logo" href="/"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#1E2A4A"/><path d="M9 23V9l14 14V9" fill="none" stroke="#F5B544" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Northwind</a>
+      <nav class="cats" aria-label="Categories"><a href="#">Phones</a><a href="#">Audio</a><a href="#">Tablets</a><a href="#">Support</a></nav>
+      <div class="hdr-right">
+        <button type="button" class="icon-btn dev-toggle" id="dev-open" aria-controls="dev" aria-expanded="false" aria-label="Developer panel" title="Developer panel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg></button>
+        <a class="icon-btn" href="#" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></a>
+        <a class="icon-btn" href="#" aria-label="Cart, 0 items"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg><span class="cart-count">0</span></a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <h1>New season gadgets</h1>
+      <p>Hand-picked phones, audio and tablets, shipped from our warehouse to over 40 countries.</p>
+      <div class="perks">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>Free tracked shipping</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>Refund if it's not what you ordered</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Ships within 24 hours</span>
+      </div>
+    </section>
+    <section class="grid" id="products" aria-label="Products">
+      <div class="card"><div class="img skel"></div><div class="body"><div class="skel" style="height:18px;width:60%"></div><div class="skel" style="height:14px;margin-top:10px"></div></div></div>
+      <div class="card"><div class="img skel"></div><div class="body"><div class="skel" style="height:18px;width:60%"></div><div class="skel" style="height:14px;margin-top:10px"></div></div></div>
+      <div class="card"><div class="img skel"></div><div class="body"><div class="skel" style="height:18px;width:60%"></div><div class="skel" style="height:14px;margin-top:10px"></div></div></div>
+    </section>
   </main>
+  <footer class="site"><div class="wrap">© Northwind Gadgets · Prices in USDT (digital US dollars) · Demo store for OpenBox</div></footer>
+
+  <aside class="dev" id="dev" aria-label="Developer panel" hidden>
+    <div class="dev-h"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg><b>Developer panel</b><span class="dev-badge">not part of the shop</span><button type="button" id="dev-close" aria-label="Close developer panel">Hide</button></div>
+    <section class="code"><h3><span>Our whole OpenBox integration · checkout.js</span></h3><pre id="src"></pre></section>
+    <section class="hooks"><h3><span>Webhooks received</span><span>HMAC verified</span></h3><div id="hooks"><p id="hooks-empty" style="color:#9AA4B2;margin:0">Waiting for events…</p></div></section>
+  </aside>
+
+  <!-- OpenBox SDK first: parser-blocking, so OpenBox exists before checkout.js calls OpenBox.mount -->
+  <script src="/openbox-checkout.js"></script>
   <script>
     window.OPENBOX_API = "__API__";
     window.OPENBOX_WEB = "__WEB__";
-    const icons = { "aurora-x1": "📱", pixelbuds: "🎧", "lumen-tab": "💻" };
+    // Neutral product illustrations (no photos in the demo).
+    const art = {
+      "aurora-x1": '<svg viewBox="0 0 120 120" aria-hidden="true"><rect x="36" y="10" width="48" height="100" rx="10" fill="#1E2A4A"/><rect x="40" y="16" width="40" height="84" rx="6" fill="#3A4A75"/><circle cx="60" cy="105" r="2.5" fill="#8C97B5"/><rect x="52" y="12" width="16" height="2.5" rx="1.25" fill="#8C97B5"/></svg>',
+      pixelbuds: '<svg viewBox="0 0 120 120" aria-hidden="true"><rect x="22" y="40" width="76" height="56" rx="26" fill="#E9EBF2" stroke="#1E2A4A" stroke-width="3"/><line x1="24" y1="62" x2="96" y2="62" stroke="#1E2A4A" stroke-width="2"/><circle cx="46" cy="52" r="7" fill="#1E2A4A"/><circle cx="74" cy="52" r="7" fill="#1E2A4A"/><circle cx="60" cy="80" r="2.5" fill="#F5B544"/></svg>',
+      "lumen-tab": '<svg viewBox="0 0 120 120" aria-hidden="true"><rect x="14" y="24" width="92" height="70" rx="8" fill="#1E2A4A"/><rect x="20" y="30" width="80" height="58" rx="4" fill="#3A4A75"/><circle cx="60" cy="27" r="1.5" fill="#8C97B5"/></svg>',
+    };
+    const info = {
+      "aurora-x1": ["Phones", "6.4\" OLED, 128 GB, all-day battery. Unlocked for any carrier."],
+      pixelbuds: ["Audio", "Noise-cancelling wireless earbuds with a pocket charging case."],
+      "lumen-tab": ["Tablets", "11\" display tablet for reading, streaming and notes."],
+    };
     fetch(`${OPENBOX_API}/v1/catalog/pk_demo_openbox`).then((r) => r.json()).then(({ products }) => {
       document.getElementById("products").innerHTML = products.map((p) => `
-        <div class="card" data-sku="${p.sku}">
-          <div class="img">${icons[p.sku] ?? "📦"}</div>
-          <div>${p.name}</div>
-          <div class="price">${(p.amount / 1e6).toFixed(2)} USDT</div>
-          <div class="checkout"></div>
-        </div>`).join("");
+        <article class="card" data-sku="${p.sku}">
+          <div class="img">${art[p.sku] ?? art["aurora-x1"]}</div>
+          <div class="body">
+            <div class="tag">${(info[p.sku] ?? ["Gadgets"])[0]}</div>
+            <div class="name">${p.name}</div>
+            <div class="desc">${(info[p.sku] ?? ["", ""])[1]}</div>
+            <div class="price-row"><span class="price">${(p.amount / 1e6).toFixed(2)}<small>USDT</small></span><span class="ship">Free shipping</span></div>
+            <div class="checkout"></div>
+          </div>
+        </article>`).join("");
       const s = document.createElement("script"); s.src = "/checkout.js"; document.body.appendChild(s);
+    }).catch(() => {
+      document.getElementById("products").innerHTML = '<p style="color:var(--mut)">We couldn\'t load the catalogue. Please refresh the page.</p>';
     });
     fetch("/checkout.js").then((r) => r.text()).then((t) => (document.getElementById("src").textContent = t));
+
+    // Developer panel (not part of the shop): toggled from the header; open by default only with ?dev=1.
+    const dev = document.getElementById("dev"), toggle = document.getElementById("dev-open");
+    const setDev = (open) => { dev.hidden = !open; toggle.setAttribute("aria-expanded", String(open)); document.body.classList.toggle("dev-open", open); };
+    setDev(new URLSearchParams(location.search).get("dev") === "1");
+    toggle.onclick = () => { const open = dev.hidden; setDev(open); if (open) document.getElementById("dev-close").focus(); };
+    document.getElementById("dev-close").onclick = () => { setDev(false); toggle.focus(); };
+
     const hooks = document.getElementById("hooks");
     new EventSource("/hooks/stream").onmessage = (m) => {
       const h = JSON.parse(m.data);
-      if (hooks.querySelector("span")) hooks.innerHTML = "";
+      document.getElementById("hooks-empty")?.remove();
       const d = document.createElement("div");
-      d.innerHTML = `<span class="${h.valid ? "ok" : "bad"}">${h.valid ? "✓ signed" : "✗ bad sig"}</span> <b>${h.type}</b> ${h.data?.ref ?? ""} ${h.data?.amount ? (h.data.amount / 1e6).toFixed(2) + " USDT" : ""}`;
+      const amt = h.data?.amount ? ` ${(h.data.amount / 1e6).toFixed(2)}` : "";
+      d.innerHTML = `<span class="${h.valid ? "ok" : "bad"}">${h.valid ? "✓" : "✗ bad signature"}</span><b>${h.type}</b><span class="ref">${h.data?.ref ?? ""}${amt}</span>`;
       hooks.prepend(d);
     };
   </script>
-  <script src="/openbox-checkout.js"></script>
 </body>
 </html>
