@@ -1,0 +1,163 @@
+/* ─── Merchant dashboard (app/merchant) + invoice advance card (components/finance.tsx) ─────────── */
+
+/* header */
+.m-sub { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.m-sub .dot-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--text-3); }
+@media (max-width: 639px) {
+  .m-export .m-label { display: none; }
+  .m-export { width: 36px; padding: 0; }
+}
+
+/* KPI group */
+.m-kpis { margin-bottom: 12px; }
+.m-kpis .kpi { position: relative; padding: 18px 20px 16px; min-width: 0; }
+.m-kpis .kpi-label { justify-content: space-between; }
+.m-kpi-main { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: 6px; min-height: 36px; }
+.m-kpi-main .kpi-value { margin-top: 0; }
+.m-spark { flex: none; display: block; overflow: visible; }
+.m-spark .line { fill: none; stroke: var(--brand-600); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.m-spark .end { fill: var(--surface); stroke: var(--brand-600); stroke-width: 1.75; }
+.m-kpis .kpi-sub { margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 1279px) and (min-width: 640px) { .m-spark { width: 64px; } }
+@media (max-width: 639px) {
+  /* swipeable strip instead of four stacked tiles */
+  .m-kpis.kpi-group { display: flex; grid-auto-flow: unset; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .m-kpis.kpi-group::-webkit-scrollbar { display: none; }
+  .m-kpis.kpi-group > .kpi { flex: 0 0 74%; scroll-snap-align: start; }
+  .m-kpis.kpi-group > .kpi + .kpi { border-top: 0; border-left: 1px solid var(--border); }
+  .m-kpis .kpi-value { font-size: 24px; line-height: 32px; }
+}
+.m-strip-hint { display: none; }
+@media (max-width: 639px) { .m-strip-hint { display: flex; justify-content: center; gap: 6px; margin: -4px 0 12px; } .m-strip-hint span { width: 6px; height: 6px; border-radius: 50%; background: var(--border-strong); } .m-strip-hint span.on { background: var(--brand-600); width: 16px; border-radius: 3px; } }
+
+/* secondary row: wallet, refund pool, advances (always three slots, so nothing shifts when financing loads) */
+.m-secondary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 24px; }
+.m-secondary > div { display: flex; align-items: center; gap: 12px; padding: 12px 20px; min-width: 0; }
+.m-secondary > div + div { border-left: 1px solid var(--border); }
+.m-secondary .ic { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; background: var(--surface-2); color: var(--text-2); flex: none; }
+.m-secondary .ic.brand { background: var(--brand-subtle); color: var(--brand-hover); }
+.m-secondary .lbl { font-size: 12px; color: var(--text-3); font-weight: 500; }
+.m-secondary .val { font-size: 15px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.m-secondary .val .cur { font-size: 12px; font-weight: 500; color: var(--text-3); margin-left: 3px; }
+.m-secondary .meta { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-secondary .act { margin-left: auto; flex: none; }
+@media (max-width: 1023px) {
+  .m-secondary { grid-template-columns: minmax(0, 1fr); }
+  .m-secondary > div + div { border-left: 0; border-top: 1px solid var(--border); }
+}
+@media (max-width: 639px) { .m-secondary > div { padding: 12px 16px; } }
+
+/* "needs action" bar */
+.m-needs { display: flex; align-items: center; gap: 14px; padding: 12px 16px 12px 14px; margin-bottom: 16px; border: 1px solid #B7E1D9; background: linear-gradient(90deg, var(--brand-50), var(--surface) 70%); border-radius: var(--r-card); }
+.m-needs .ic { width: 32px; height: 32px; border-radius: 8px; background: var(--brand-700); color: #fff; display: grid; place-items: center; flex: none; }
+.m-needs .t { font-weight: 600; color: var(--text); }
+.m-needs .refs { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--text-2); margin-top: 2px; }
+.m-needs .refs button { all: unset; cursor: pointer; font-family: var(--mono); font-size: 12.5px; font-feature-settings: "zero" 1; color: var(--brand-700); font-weight: 600; }
+.m-needs .refs button:hover { text-decoration: underline; text-underline-offset: 2px; }
+.m-needs .refs button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 3px; }
+.m-needs .btn { margin-left: auto; flex: none; }
+.m-needs .refs > span { white-space: nowrap; }
+@media (max-width: 639px) {
+  /* text gets the full row; "Show" drops below it instead of squeezing the list word by word */
+  .m-needs { align-items: flex-start; flex-wrap: wrap; row-gap: 10px; }
+  .m-needs .grow { flex: 1 1 calc(100% - 46px); min-width: 0; }
+  .m-needs .btn { margin-left: 46px; }
+}
+
+/* orders card toolbar: segmented filter */
+.m-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px 12px 24px; border-bottom: 1px solid var(--border); }
+.m-toolbar h2 { font-size: var(--fs-h3); line-height: var(--lh-h3); margin: 0; white-space: nowrap; }
+.tabs.seg { display: inline-flex; gap: 2px; padding: 3px; margin: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); max-width: 100%; }
+.tabs.seg .tab-ink { display: none; }
+.tabs.seg button { padding: 5px 10px; margin: 0; border: 0; border-radius: 7px; font-size: 13px; color: var(--text-2); transition: background-color var(--dur-2) var(--ease-standard), color var(--dur-2) var(--ease-standard), box-shadow var(--dur-2) var(--ease-standard); }
+.tabs.seg button:hover { color: var(--text); }
+.tabs.seg button[aria-selected="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgb(16 24 40 / .08), 0 0 0 1px rgb(16 24 40 / .04); }
+.tabs.seg .tab-count { height: 18px; min-width: 18px; font-size: 11px; background: transparent; color: var(--text-3); padding: 0 4px; }
+.tabs.seg button[aria-selected="true"] .tab-count { background: var(--surface-2); color: var(--text-2); }
+.tabs.seg button:has(.attn) .tab-count { background: var(--brand-700); color: #fff; }
+@media (max-width: 639px) {
+  .m-toolbar { padding: 12px 16px; flex-direction: column; align-items: stretch; }
+  .tabs.seg { display: flex; overflow-x: auto; scrollbar-width: none; }
+  .tabs.seg::-webkit-scrollbar { display: none; }
+}
+
+/* orders table */
+.m-orders table.data td { height: 60px; }
+.m-orders table.data tbody tr.clickable:hover td { background: var(--surface-2); }
+.m-ref { all: unset; cursor: pointer; font-family: var(--mono); font-size: 13px; font-weight: 600; font-feature-settings: "zero" 1; color: var(--text); border-radius: 4px; }
+.m-ref:hover { color: var(--brand-700); text-decoration: underline; text-underline-offset: 2px; }
+.m-ref:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.m-item { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.m-item .name { color: var(--text); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-item .product-tile { box-shadow: inset 0 0 0 1px rgb(16 24 40 / .06); }
+.m-net-held { display: inline-flex; align-items: center; gap: 4px; color: var(--text-3); font-size: 13px; }
+.m-net-held .icon { width: 13px; height: 13px; }
+.m-next { display: flex; align-items: center; }
+.m-orders .badges { display: flex; gap: 4px; flex-wrap: wrap; }
+
+/* mobile order list */
+.m-li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: start; }
+.m-li .top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.m-li .ref { font-family: var(--mono); font-size: 13px; font-weight: 600; font-feature-settings: "zero" 1; }
+.m-li .prod { font-size: 13px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-list .list-actions { margin-left: 52px; }
+.m-list > li { transition: background-color var(--dur-1) var(--ease-standard); }
+.m-list > li:hover { background: var(--surface-3); }
+
+/* side cards */
+.m-gas .card-h { flex-wrap: nowrap; align-items: flex-start; }
+.m-gas .card-h > div:first-child { flex: 1; min-width: 0; }
+.m-gas .card-h > .row { flex: none; }
+.m-hook-ev { display: flex; flex-direction: column; gap: 1px; }
+.m-hook-ev .h { font-weight: 500; color: var(--text); }
+.m-hook-ev .raw { font-family: var(--mono); font-size: 11.5px; color: var(--text-3); font-feature-settings: "zero" 1; }
+
+/* settlement rules */
+.m-split { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: -4px -8px 0; padding: 4px 8px; }
+.m-split .art { width: 100%; max-width: 760px; min-width: 620px; height: auto; margin: 0 auto; }
+.m-split-foot { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.m-split-foot > div { padding: 12px 14px; border-radius: 10px; background: var(--surface-3); border: 1px solid var(--border); font-size: 13px; color: var(--text-2); }
+.m-split-foot b { display: block; color: var(--text); font-weight: 600; margin-bottom: 2px; }
+@media (max-width: 1023px) { .m-split-foot { grid-template-columns: minmax(0, 1fr); } }
+.m-scroll-hint { display: none; }
+@media (max-width: 639px) { .m-scroll-hint { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-3); margin-top: 8px; } }
+
+/* drawer header */
+.m-dh { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.m-dh .product-tile { box-shadow: inset 0 0 0 1px rgb(16 24 40 / .06); }
+.m-dh-text { display: flex; flex-direction: column; min-width: 0; }
+.m-dh-name { font-size: 18px; line-height: 26px; font-weight: 600; letter-spacing: -.01em; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-dh-ref { font-size: 12.5px; line-height: 18px; color: var(--text-3); font-weight: 400; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.m-dh-ref .mono { color: var(--text-2); font-weight: 500; }
+.m-dh-sub { margin-top: 12px; }
+.m-dh-sub .badges { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* mini horizontal stepper inside drawer header */
+.m-mini { margin-top: 16px; padding: 12px 4px 2px; border-top: 1px dashed var(--border); }
+.m-mini .stepper li::before, .m-mini .stepper li::after { top: 9px; left: calc(-50% + 13px); right: calc(50% + 13px); }
+.m-mini .stepper .step-dot { width: 20px; height: 20px; font-size: 10px; border-width: 1.5px; }
+.m-mini .stepper .step-dot .icon { width: 11px; height: 11px; }
+.m-mini .stepper li.current .step-dot { box-shadow: 0 0 0 3px var(--brand-subtle); }
+.m-mini .stepper .step-label { font-size: 11.5px; line-height: 15px; margin-top: 6px; padding: 0 2px; }
+.m-mini .stepper .step-time { display: none; }
+
+.m-pack-hint { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: var(--surface-3); border: 1px solid var(--border); font-size: 13px; color: var(--text-2); }
+.m-pack-hint b { color: var(--text); font-weight: 600; }
+.drawer-b .m-sec-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.drawer-b .m-sec-h h3 { margin: 0; }
+
+/* top-up dialog */
+.m-help { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.m-help .btn.link { font-size: 12px; }
+
+/* invoice advance card (components/finance.tsx) */
+.adv-art { margin: -4px -4px 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; background: linear-gradient(160deg, #F8FAFC, #F1F5F9); padding: 8px 8px 4px; }
+.adv-art .art { width: 100%; min-width: 440px; height: auto; display: block; }
+.m-split-foot > div { border-top-width: 3px; }
+.m-split-foot > .ok { border-top-color: var(--success); }
+.m-split-foot > .bad { border-top-color: var(--danger); }
+.m-split-foot > .warn { border-top-color: var(--warm); }
+@media (max-width: 639px) { .m-needs .refs { flex-direction: column; gap: 2px; } }
+
+/* verifier round 2: readable muted text on the selected row; room for the copy button over code */
+tr.selected .muted, tr.selected .xs, tr.selected .small { color: var(--text-2); }

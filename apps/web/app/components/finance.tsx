@@ -2,6 +2,7 @@
 import { useState, type ReactNode } from "react";
 import { merchant, usePoll } from "../lib/api";
 import { Badge, Callout, ExtLink, Hash, Icon, Money, Skeleton, Timestamp, fmtAmount } from "./ui";
+import { ReceivableFlow } from "./art";
 
 /** Delivery stage of the order behind a receivable, in lender terms. */
 const DELIVERY: Record<string, [string, "info" | "warning" | "success" | "neutral" | "danger"]> = {
@@ -92,6 +93,7 @@ export function AdvanceCard({ refId, tick }: { refId: string; tick: number }) {
       <section>
         {header("Get paid now", <Badge tone="brand" dot={false}>Invoice advance</Badge>)}
         <div className="card card-b stack-16">
+          <div className="adv-art" tabIndex={0} role="region" aria-label="How an invoice advance works (diagram)"><ReceivableFlow /></div>
           <p className="text-2" style={{ margin: 0 }}>
             Get {strong(q.sellerToday)} today instead of waiting for delivery. A lender pays you now; when the delivery is verified, the payout repays them.
             {Number(q.bond) > 0 && <> {fmtAmount(q.bond)} USDT is held as a bond and returned to you if the delivery checks out.</>}
