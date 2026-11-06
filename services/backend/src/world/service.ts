@@ -8,7 +8,7 @@ import { db, getOrderByRef, now, updateOrder } from "../db";
 import { publish } from "../bus";
 import { agentPassVerifier } from "./agentpass";
 import { idkitVerifier } from "./idkit";
-import { mockVerifier } from "./mock";
+import { MOCK_ISS, PERSONAS, mockVerifier } from "./mock";
 import type { HumanVerifier } from "./verifier";
 import { acceptPartialRefund, submitDispatch, submitHandover } from "../agent/household";
 import { signLabel } from "../ops";
@@ -120,12 +120,16 @@ async function onVerified(r: WorldRequestRow, iss: string, sub: string) {
 
   if (r.purpose === "approve_refund") {
     if (!order.pending_verdict_json) return setStatus(r.id, "failed", { reason: "no partial refund is waiting for approval" });
-    const owner = ownerOf(order.buyer);
+    // Real IdP: the owner is linked on first approval (trust on first use) and requested by `sub` afterwards.
+    // Mock mode: every demo buyer is a fresh wallet, so the mock household owner counts as already linked,
+    // which keeps the "someone else approves" denial demonstrable.
+    const owner = ownerOf(order.buyer) ??
+      (checkpointVerifier.kind === "mock" ? { iss: MOCK_ISS, sub: PERSONAS.owner.sub } : undefined);
     if (owner && (owner.iss !== iss || owner.sub !== sub)) {
       return setStatus(r.id, "wrong_person", { world_sub: sub, reason: "Not the household owner linked to this wallet" },
         "Denied: not the household owner. The agent did nothing.");
     }
-    if (!owner && order.buyer) {
+    if (!ownerOf(order.buyer) && order.buyer) {
       db.prepare("INSERT INTO household_owners (buyer, iss, sub, linked_at) VALUES (?,?,?,?)").run(order.buyer.toLowerCase(), iss, sub, now());
     }
     setStatus(r.id, "verified", { world_sub: sub }, owner ? "Household owner approved with World ID" : "Household owner approved and linked with World ID");
