@@ -39,10 +39,6 @@ apps/web/CLAUDE.md
 .idea/
 
 # ---- docs: drafted locally, chosen and finalised before submission -------------------
-/README.md
-/WHITECHAIN_FEEDBACK.md
-/WORLD_DEBRIEF.md
-/contracts/README.md
-
+/contracts
 # Vercel CLI project link
 .vercel
