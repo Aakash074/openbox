@@ -26,6 +26,7 @@ export default function Home() {
           <div className="row" style={{ justifyContent: "center", marginTop: 16, gap: 16 }}>
             <Link href="/kiosk" className="small">Doorbell screen</Link>
             <Link href="/demo" className="small">Split-screen demo</Link>
+            <Link href="/lender" className="small">Receivables for lenders</Link>
           </div>
         </section>
         <section aria-labelledby="how">

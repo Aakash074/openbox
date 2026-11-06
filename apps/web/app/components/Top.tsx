@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { Badge, Brand, Icon, Logo } from "./ui";
 
-const NAV: [string, string][] = [["/merchant", "Orders"], ["/kiosk", "Doorbell"], ["/demo", "Demo view"]];
+const NAV: [string, string][] = [["/merchant", "Orders"], ["/lender", "Receivables"], ["/kiosk", "Doorbell"], ["/demo", "Demo view"]];
 
 /** Operator app bar: logo, nav with active state, environment badge, account. Hidden in ?embed=1 panes. */
 export function Top({ account = "Northwind Gadgets", variant = "app" }: { account?: string; variant?: "app" | "marketing" } = {}) {
